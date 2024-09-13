@@ -1,0 +1,26 @@
+{
+  "name": "wallet-proxy",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@solana/wallet-adapter-base": "^0.9.23",
+    "@solana/wallet-adapter-solflare": "^0.6.28",
+    "@solana/web3.js": "^1.95.3"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.5",
+    "rollup": "^4.21.3",
+    "typescript": "^5.6.2",
+    "typescript-bundle": "^1.0.18"
+  }
+}
