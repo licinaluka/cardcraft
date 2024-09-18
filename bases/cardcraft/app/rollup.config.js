@@ -6,7 +6,7 @@ import json from "@rollup/plugin-json";
 export default {
     input: "./src/index.ts",
     external: [
-        "fs"
+        // "fs"
     ],
     output: {
         file: "./resources/app/bundle.js",

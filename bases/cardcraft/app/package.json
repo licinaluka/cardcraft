@@ -15,7 +15,8 @@
     "@rollup/plugin-typescript": "^11.1.6",
     "@solana/wallet-adapter-base": "^0.9.23",
     "@solana/wallet-adapter-solflare": "^0.6.28",
-    "@solana/web3.js": "^1.95.3"
+    "@solana/web3.js": "^1.95.3",
+    "bs58": "^6.0.0"
   },
   "devDependencies": {
     "parcel-bundler": "^1.12.5",

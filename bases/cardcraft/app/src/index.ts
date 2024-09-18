@@ -1,25 +1,100 @@
 
-import { WalletAdapterNetwork } from  "@solana/wallet-adapter-base"
+import bs58 from "bs58"
+import { WalletAdapterNetwork, BaseMessageSignerWalletAdapter } from  "@solana/wallet-adapter-base"
 import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare"
-import { greeter } from "./thing.ts"
 import { clusterApiUrl } from "@solana/web3"
+import { PublicKey } from "@solana/web3.js"
 
-async function main() : Promise<String> {
-    let net = WalletAdapterNetwork.Devnet
-    let adapter: SolflareWalletAdapter = await new SolflareWalletAdapter({network: net})
+import { greeter } from "./thing.ts"
 
-    let conn = await adapter.connect()
-    let identity = await adapter.publicKey;
-
-    // let c =  await adapter.connect()
-
-    console.log(identity)
-    document.body.innerHTML += `<b>${identity}</b>`
-    greeter()
-
-    return `connected to ${identity}`
+type AuthnChallenge {
+    cid: number
+    message: string
 }
 
-window.onload = () => {
-    main().then(console.log)
+class Purse {
+    wallet?: BaseMessageSignerWalletAdapter;
+    
+    constructor() {
+        
+    }
+    
+    /** */
+    async connect(net?: WalletAdapterNetwork = WalletAdapterNetwork.Devnet) : Promise<void> {
+        this.wallet = await new SolflareWalletAdapter({network: net})
+        await this.wallet.connect()
+    }
+    
+    /** */
+    identity() : PublicKey | null {
+        if (! this.wallet) {
+            throw 'Wallet not connected!'
+        }
+        
+        return this.wallet?.publicKey;
+    }
+    
+    /** */
+    async sign(message: string) : Promise<string> {
+        let b: Uint8Array = bs58.decode(message)
+        let signed: Uint8Array | undefined = await this.wallet?.signMessage(b)
+        if (! signed) {
+            throw 'Failed to sign message!'
+        }
+        
+        return bs58.encode(signed)
+    }
+    
+    /** 
+    *
+    */
+    async signIn() {
+        // exchange nonces with the server
+        let nonce = bs58.encode(crypto.getRandomValues(new Uint8Array(Array.from({length: 12}))))
+
+        // obtain login challenge
+        let resp = await fetch(
+            '/api/part/game/authn/challenge',
+            {
+                credentials: "same-origin",
+                method: 'POST',
+                body: JSON.stringify({
+                    nonce: nonce,
+                    key: this.identity()
+                }),
+                headers: {
+                    "Content-type": "application/json"
+                }
+            }
+        )
+
+        // check if already logged in
+        if (resp.status == 302) {
+            return null
+        }
+
+        let challenge: AuthnChallenge = await resp.json()
+        
+        // sign login challenge
+        let signature: string = await this.sign(challenge.message)
+
+        // send back to server, set-cookie response header will assign a session
+        await fetch(
+            '/api/part/game/authn',
+            {
+                credentials: "same-origin",
+                method: 'POST',
+                body: JSON.stringify({
+                    nonce: nonce,
+                    challenge: challenge.cid,
+                    signature: signature
+                }),
+                headers: {
+                    "Content-type": "application/json"
+                }
+            }
+        )
+    }
 }
+
+window.purse = new Purse()
