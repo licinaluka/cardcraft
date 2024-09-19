@@ -1,6 +1,6 @@
 def theme():
     return """
-.document {
+.game {
   /* font-family: 'Perfect DOS VGA 437' !important; */
   font-size: initial;
 }
@@ -21,50 +21,54 @@ h1 {
 .millers {
   overflow: hidden;
 }
-.miller-column {
+.column {
   flex-grow: 1;
   margin: 1em;
 }
-.miller-column.primary {
-  width: 16%;
+.column.primary {
+  min-width: 16%;
 }
-.miller-column.secondary {
-  width: 32%;
+.column.secondary {
+  min-width: 32%;
   overflow: auto;
   height: 100vh;
 }
-.miller-column.tertiary {
-  width: 50%;
+.column.tertiary {
+  min-width: 50%;
   overflow:auto;
   height: 100vh;
                                                                       
   scroll-behavior: smooth;
 }
-.miller-column.secondary a[disabled=true] {
+.column.secondary a[disabled=true] {
   pointer-events: none;
 }
-                                                                      
-.document {
+
+.no-matches {
+  display: flex; justify-content: center; align-items: center; width: auto; height: 100vh
+}
+
+.game {
   padding: 2em;
   font-family: monospace;
 }
-.document *:hover {
+.game *:hover {
   border-left: none;
 }
-.document *:target {
+.game *:target {
   /** background: #FBF719; */
   /** text-decoration: underline; */
   /** text-decoration-color: #673ab7; */
   padding-left: 0.2em;
   border-left: 2px solid #888;
 }
-.document > div {
+.game > div {
   margin: 1em;
 }
-.document nav a {
+.game nav a {
   color: #111;
 }
-.document.web {
+.game.web {
   height: 100vh;
 }
                                                                       
@@ -122,23 +126,53 @@ img {
 }
                                                                       
                                                                       
-.document ul:not(.browser-default) {
+.game ul:not(.browser-default) {
   padding-left: revert;
 }
-.document ul:not(.browser-default)>li {
+.game ul:not(.browser-default)>li {
   list-style-type: initial;
 }
                                                                       
-.document ol:not(.browser-default) {
+.game ol:not(.browser-default) {
   padding-left: revert;
 }
-.document ol:not(.browser-default)>li {
+.game ol:not(.browser-default)>li {
   /* list-style-type: initial; */
 }
-                                                                      
-#anchors a:target {
-    font-weight: bold;
-    color: red;
+
+.game .board {
+  min-height: 100vh;
+}
+
+.game .board .opponent {
+  display: flex;
+  align-items: flex-start;  
+}
+
+.game .board .battle {
+  display: flex;
+  align-items: flex-middle;
+  min-height: 30%;
+}
+
+.game .board .hand {
+  display: flex;
+  align-items: flex-end;
+}
+
+.game .board .card-render {
+  max-width: 10em;
+  padding: 1em;
+  margin: 1em;
+  border: 2px solid gold;
+}
+
+.game .board .card-render .c-content {
+  display: none;
+}
+
+.game .board .c-content:target {
+  display: block;
 }
                                                                       
 /***** MODAL DIALOG ****/
@@ -280,17 +314,23 @@ img {
   .primary {
     display: none;
   }
-                                                                      
+                                                   
   .tertiary {
     display: none;
   }
                                                                       
-  body:has(.document) .tertiary {
+  body:has(.game) .tertiary {
     display: initial;
     width: 100%;
   }
                                                                       
-  body:has(.document) .secondary {
+  body:has(.game) .secondary {
     display: none;
   }
+
+  .no-matches {
+    width: 100vw;
+  }
+}
+
 """

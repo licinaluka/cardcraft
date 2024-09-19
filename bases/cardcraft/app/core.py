@@ -5,6 +5,7 @@ import hmac
 import os
 import random
 import time
+import typing as T
 import uuid
 
 from flask import Flask, Response, request, url_for
@@ -116,7 +117,120 @@ def identity():
     return []
 
 
-def menu():
+def card(data: dict) -> list[T.Union[str, dict, list]]:
+    d: dict = data
+    identifier: str = os.urandom(16).hex()
+    return [
+        "a",
+        {
+            "href": f"#c-content-{identifier}",
+            "class": "card-render"
+        },
+        [
+            "div",
+            {"class": "c-image"},
+            ["div", {"class": "c-title"}, d["name"]],
+            ["img", {"src": d["artwork"]}],
+        ],
+        ["small", {"id": f"c-content-{identifier}", "class": "c-content"}, d["effect"]],
+    ]
+
+
+@app.route("/web/part/game/match/new", methods=["GET"])
+def new_match():
+    hand: list[dict] = [
+        {
+            "name": "Awakening of the Possessed",
+            "cardType": "Spell",
+            "property": "Continuous",
+            "password": "62256492",
+            "effect": 'Monsters you control gain 300 ATK for each different Attribute you control. "Charmer" and "Familiar-Possessed" monsters you control cannot be destroyed by card effects. If a Spellcaster monster(s) with 1850 original ATK is Normal or Special Summoned to your field: Draw 1 card. You can only use this effect of "Awakening of the Possessed" once per turn.',
+            "cardSet": [
+                {
+                    "releasedDate": "2020-03-19",
+                    "code": "DUOV-EN030",
+                    "name": "Duel Overload",
+                    "rarity": "Ultra Rare",
+                },
+                {
+                    "releasedDate": "2020-10-22",
+                    "code": "SDCH-EN020",
+                    "name": "Structure Deck: Spirit Charmers",
+                    "rarity": "Common",
+                },
+            ],
+            "artwork": "https://yugicrawler.vercel.app/artwork/62256492",
+        },
+        {
+            "name": "Dark Magician",
+            "cardType": "Monster",
+            "atk": "2500",
+            "def": "2100",
+            "monsterTypes": "Spellcaster / Normal",
+            "attribute": "DARK",
+            "isToken": False,
+            "level": "7",
+            "password": "36996508",
+            "limitation_text": "",
+            "effect": "The ultimate wizard in terms of attack and defense.",
+            "cardSet": [
+                {
+                    "releasedDate": "2015-11-12",
+                    "code": "YGLD-ENB02",
+                    "name": "Yugi's Legendary Decks",
+                    "rarity": "Ultra Rare",
+                },
+                {
+                    "releasedDate": "2023-08-24",
+                    "code": "SBC1-ENG01",
+                    "name": "Speed Duel: Streets of Battle City",
+                    "rarity": "Secret Rare",
+                },
+                {
+                    "releasedDate": "2023-08-24",
+                    "code": "SBC1-ENG10",
+                    "name": "Speed Duel: Streets of Battle City",
+                    "rarity": "Common",
+                },
+            ],
+            "artwork": "https://yugicrawler.vercel.app/artwork/36996508",
+        },
+    ]
+
+    return html(
+        [
+            "div",
+            {"class": "game"},
+            [
+                "div",
+                {"class": "board"},
+                [
+                    "div",
+                    {"class": "opponent"},
+                    [
+                        ["p", "OP"],
+                        ["div", {"class": "hand"}, [card({
+                            "name": "?",
+                            "effect": "?",
+                            "artwork": "https://upload.wikimedia.org/wikipedia/en/2/2b/Yugioh_Card_Back.jpg"
+                        }) for e in range(1, random.randint(1, 7))]]
+                    ]
+                ],
+                ["p", {"class": "battle", "id": "battle"}, "BAT"],
+                [
+                    "div",
+                    {"class": "player"},
+                    [
+                        ["p", "PL"],
+                        ["div", {"class": "hand"}, [card(e) for e in hand]],
+                    ],
+                ],
+            ],
+        ]
+    )
+
+
+def navigation():
     return [
         "nav",
         {"class": "nav-wrapper purple white-text darken-3"},
@@ -127,8 +241,14 @@ def menu():
                 {"onclick": "contexts()", "style": "background:blue;cursor:pointer"},
                 ["i", {"class": "material-icons insert_chart"}, " "],
             ],
+            ["li", ["a", {"href": "#menu", "style":"transform: rotate(90deg);"}, "|||"]],
             ["li", ["a", {"href": "/"}, "home"]],
-            ["li", ["a", {"href": "/web/thing" + "/research"}, "thing"]],
+            ["li", ["a", {
+                "hx-get": "/web/part/game/match/new",
+                "hx-target": ".tertiary",
+                "hx-swap": "innerHTML",
+                "class": "btn purple"
+            }, "New game"]],
             [
                 "li",
                 {"class": "right"},
@@ -144,6 +264,40 @@ def menu():
         ],
     ]
 
+
+def games():
+    matches = []
+    if 0 < len(matches):
+        return [["p", {}, f"game {e}"] for e in matches]
+
+    return [
+        "div",
+        {
+            "class": "no-matches"
+        },
+        [
+            [
+                "div",
+                {"style": "color: #888; cursor: default; user-select: none"},
+                "No previous games!",
+            ],
+            ["br"],
+            [
+                "a",
+                {
+                    "hx-get": "/web/part/game/match/new",
+                    "hx-target": ".tertiary",
+                    "hx-swap": "innerHTML",
+                    "class": "purple-text",
+                },
+                " ... start one!",
+            ],
+        ],
+    ]
+
+
+def menu():
+    return ["div", ["ul", [["li", ["a", {}, "Games"]], ["li", ["a", {}, "Decks"]]]]]
 
 def hiccpage():
     return html(
@@ -176,18 +330,18 @@ def hiccpage():
             ],
             [
                 "body",
-                menu(),
+                navigation(),
                 [
                     "div",
                     {"class": "millers columns"},
                     [
-                        ["div", {"class": "column primary"}, "ok"],
+                        ["div", {"class": "column primary", "id": "menu"}, menu()],
+                        ["div", {"class": "column secondary"}, games()],
                         [
                             "div",
-                            {"class": "column secondary"},
-                            [["p", {}, f"game {e}"] for e in range(1, 20)],
+                            {"class": "column tertiary"},
+                            ["div", {"style": "padding:2em;"}, "Select a previous match or start a new one"],
                         ],
-                        ["div", {"class": "column tertiary"}, "lorem ipsum"],
                     ],
                     ["script", {"src": js("app/htmx.min.js")}, " "],
                     ["script", {"src": js("app/json-enc.js")}, " "],
