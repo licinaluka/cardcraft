@@ -14,17 +14,14 @@ from pyhiccup.core import _convert_tree, html
 from solders.pubkey import Pubkey
 from types import SimpleNamespace
 
-from cardcraft.app.theme import theme
+from cardcraft.app.controllers.cards import controller as cards, card
+from cardcraft.app.views.base import hiccpage, trident
+from cardcraft.app.views.navigation import menu
+from cardcraft.app.views.theme import theme
+from cardcraft.app.mem import mem
 
 app = Flask(__name__, static_url_path="/resources", static_folder="./resources")
-
-js = lambda e: url_for("static", filename=e)
-
-mem: dict = {
-    "session": {},
-    "cid": 1,
-    "battles": {}
-}
+app.register_blueprint(cards)
 
 
 # @app.errorhandler(Exception)
@@ -37,7 +34,7 @@ def exceptions(err):
 
 @app.route("/")
 def landing():
-    return hiccpage()
+    return hiccpage(trident(menu(), games(), ["div", {"style": "padding:2em;"}, "Select a previous match or start a new one"]))
 
 
 @app.route("/api/part/game/authn", methods=["POST"])
@@ -121,23 +118,23 @@ def identity():
     return []
 
 
-def card(data: dict) -> list[T.Union[str, dict, list]]:
-    d: dict = data
-    identifier: str = os.urandom(16).hex()
-    return [
-        "a",
-        {
-            "href": f"#c-content-{identifier}",
-            "class": "card-render"
-        },
-        [
-            "div",
-            {"class": "c-image"},
-            ["div", {"class": "c-title"}, d["name"]],
-            ["img", {"src": d["artwork"]}],
-        ],
-        ["small", {"id": f"c-content-{identifier}", "class": "c-content"}, d["effect"]],
-    ]
+# def card(data: dict) -> list[T.Union[str, dict, list]]:
+#     d: dict = data
+#     identifier: str = os.urandom(16).hex()
+#     return [
+#         "a",
+#         {
+#             "href": f"#c-content-{identifier}",
+#             "class": "card-render"
+#         },
+#         [
+#             "div",
+#             {"class": "c-image"},
+#             ["div", {"class": "c-title"}, d["name"]],
+#             ["img", {"src": d["artwork"]}],
+#         ],
+#         ["small", {"id": f"c-content-{identifier}", "class": "c-content"}, d["effect"]],
+#     ]
 
 @app.route("/web/part/game/match/new", methods=["POST"])
 def new_match():
@@ -175,64 +172,8 @@ def load_match(battle_id: str):
 
     sess_id: str = request.cookies.get("ccraft_sess")
 
-    hand: list[dict] = [
-        {
-            "name": "Awakening of the Possessed",
-            "cardType": "Spell",
-            "property": "Continuous",
-            "password": "62256492",
-            "effect": 'Monsters you control gain 300 ATK for each different Attribute you control. "Charmer" and "Familiar-Possessed" monsters you control cannot be destroyed by card effects. If a Spellcaster monster(s) with 1850 original ATK is Normal or Special Summoned to your field: Draw 1 card. You can only use this effect of "Awakening of the Possessed" once per turn.',
-            "cardSet": [
-                {
-                    "releasedDate": "2020-03-19",
-                    "code": "DUOV-EN030",
-                    "name": "Duel Overload",
-                    "rarity": "Ultra Rare",
-                },
-                {
-                    "releasedDate": "2020-10-22",
-                    "code": "SDCH-EN020",
-                    "name": "Structure Deck: Spirit Charmers",
-                    "rarity": "Common",
-                },
-            ],
-            "artwork": "https://yugicrawler.vercel.app/artwork/62256492",
-        },
-        {
-            "name": "Dark Magician",
-            "cardType": "Monster",
-            "atk": "2500",
-            "def": "2100",
-            "monsterTypes": "Spellcaster / Normal",
-            "attribute": "DARK",
-            "isToken": False,
-            "level": "7",
-            "password": "36996508",
-            "limitation_text": "",
-            "effect": "The ultimate wizard in terms of attack and defense.",
-            "cardSet": [
-                {
-                    "releasedDate": "2015-11-12",
-                    "code": "YGLD-ENB02",
-                    "name": "Yugi's Legendary Decks",
-                    "rarity": "Ultra Rare",
-                },
-                {
-                    "releasedDate": "2023-08-24",
-                    "code": "SBC1-ENG01",
-                    "name": "Speed Duel: Streets of Battle City",
-                    "rarity": "Secret Rare",
-                },
-                {
-                    "releasedDate": "2023-08-24",
-                    "code": "SBC1-ENG10",
-                    "name": "Speed Duel: Streets of Battle City",
-                    "rarity": "Common",
-                },
-            ],
-            "artwork": "https://yugicrawler.vercel.app/artwork/36996508",
-        },
-    ]
+
+    hand: list[dict] = mem["cards"]
 
     pl = mem["battles"][battle_id]["players"][sess_id]
     op = mem["battles"][battle_id]["players"]["bot1"]
@@ -251,9 +192,9 @@ def load_match(battle_id: str):
                     [
                         ["p", f"{op.name} {op.hp}/{op.hpmax}"],
                         ["div", {"class": "hand"}, [card({
-                            "name": "?",
-                            "effect": "?",
-                            "artwork": "https://upload.wikimedia.org/wikipedia/en/2/2b/Yugioh_Card_Back.jpg"
+                            "A_value": "?",
+                            "D_value": "?",
+                            "C_value": "card-back-ue-pirated.jpg"
                         }) for e in range(0, random.randint(3, 7))]]
                     ]
                 ],
@@ -276,47 +217,6 @@ def load_match(battle_id: str):
     )
 
     return resp
-
-
-def navigation():
-    sess_id: T.Optional[str] = request.cookies.get("ccraft_sess")
-    authenticated: bool = sess_id is not None and sess_id in mem["session"]
-    identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
-
-    sign_in = [
-        "a",
-        {
-            "id": "connection",
-            "onclick": "window.purse.connect()",
-        },
-        "connect o/"
-    ]
-
-    return [
-        "nav",
-        {"class": "nav-wrapper purple white-text darken-3"},
-        [
-            "ul",
-            [
-                "li",
-                {"onclick": "contexts()", "style": "background:blue;cursor:pointer"},
-                ["i", {"class": "material-icons insert_chart"}, " "],
-            ],
-            ["li", ["a", {"href": "#menu", "style":"transform: rotate(90deg);"}, "|||"]],
-            ["li", ["a", {"href": "/"}, "home"]],
-            ["li", ["a", {
-                "hx-post": "/web/part/game/match/new",
-                "hx-target": ".tertiary",
-                "hx-swap": "innerHTML",
-                "class": "btn purple"
-            }, "New game"]],
-            [
-                "li",
-                {"class": "right"},
-                sign_in if not authenticated else ["a", identity]
-            ],
-        ],
-    ]
 
 
 def games():
@@ -348,62 +248,3 @@ def games():
             ],
         ],
     ]
-
-
-def menu():
-    return ["div", ["ul", [["li", ["a", {}, "Games"]], ["li", ["a", {}, "Decks"]]]]]
-
-def hiccpage():
-    return html(
-        [
-            [
-                "head",
-                [
-                    "meta",
-                    {
-                        "content": "width=device-width, initial-scale=1",
-                        "name": "viewport",
-                    },
-                ],
-                ["meta", {"charset": "UTF-8"}],
-                [
-                    "link",
-                    {
-                        "rel": "stylesheet",
-                        "href": "https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css",
-                    },
-                ],
-                [
-                    "link",
-                    {
-                        "rel": "stylesheet",
-                        "href": "https://fonts.googleapis.com/icon?family=Material+Icons",
-                    },
-                ],
-                ["style", {"type": "text/css"}, theme()],
-            ],
-            [
-                "body",
-                navigation(),
-                [
-                    "div",
-                    {"class": "millers columns"},
-                    [
-                        ["div", {"class": "column primary", "id": "menu"}, menu()],
-                        ["div", {"class": "column secondary"}, games()],
-                        [
-                            "div",
-                            {"class": "column tertiary"},
-                            ["div", {"style": "padding:2em;"}, "Select a previous match or start a new one"],
-                        ],
-                    ],
-                    ["script", {"src": js("app/htmx.min.js")}, " "],
-                    ["script", {"src": js("app/json-enc.js")}, " "],
-                    ["script", "htmx.config.withCredentials=true"],
-                    ["script", {"src": js("app/bundle.js"), "type": "module"}, " "],
-                ],
-            ],
-        ],
-        etype="html5",
-        **{"dir": "ltr"},
-    )

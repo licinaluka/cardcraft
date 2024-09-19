@@ -172,21 +172,53 @@ img {
   border: 1px solid #555;
 }
 
-.game .board .card-render {
+.game .card-render {
+  display: block;
   max-width: 10em;
   padding: 1em;
   margin: 1em;
   border: 2px solid gold;
 }
 
-.game .board .card-render .c-content {
+.game .card-render .c-image img {
+  object-fit: cover;
+  object-position: center;
+  height: 13em;
+}
+
+.game .hand .card-render .c-contenx {
   display: none;
 }
 
-.game .board .c-content:target {
+.game .c-content:target {
   display: block;
 }
-                                                                      
+
+.layouts {
+  display: flex;
+}
+
+.card-render .c-image {
+  max-width: 100%;
+}
+
+.card-meta {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.card-meta input {
+  max-width: 40%;
+  margin: 1em !important;
+}
+
+.collection, .collection-item {
+  background: black !important;
+  color: white !important;
+  border: none !important;
+}
+
 /***** MODAL DIALOG ****/
 #modal {
   /* Underlay covers entire screen. */
