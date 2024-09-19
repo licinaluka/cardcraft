@@ -14,15 +14,21 @@ type AuthnChallenge {
 
 class Purse {
     wallet?: BaseMessageSignerWalletAdapter;
+    btn: Element | null
     
     constructor() {
-        
+        this.btn = document.querySelector("#connection")
     }
     
     /** */
     async connect(net?: WalletAdapterNetwork = WalletAdapterNetwork.Devnet) : Promise<void> {
         this.wallet = await new SolflareWalletAdapter({network: net})
         await this.wallet.connect()
+        
+        if (this.btn) {
+            this.btn.setAttribute("onclick", "window.purse.signIn()")
+            this.btn.innerHTML = "sign in o/"
+        }
     }
     
     /** */
@@ -94,6 +100,10 @@ class Purse {
                 }
             }
         )
+
+        if (this.btn) {
+            this.btn.innerHTML = `${this.identity()}`
+        }
     }
 }
 

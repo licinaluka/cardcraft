@@ -151,13 +151,25 @@ img {
 
 .game .board .battle {
   display: flex;
-  align-items: flex-middle;
+  /* align-items: flex-middle; */
   min-height: 30%;
+  flex-direction: column;
 }
 
 .game .board .hand {
   display: flex;
   align-items: flex-end;
+}
+
+.game .board .field {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.game .board .spot {
+  padding: 1em;
+  margin: 1em;
+  border: 1px solid #555;
 }
 
 .game .board .card-render {

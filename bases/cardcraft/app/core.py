@@ -8,7 +8,7 @@ import time
 import typing as T
 import uuid
 
-from flask import Flask, Response, request, url_for
+from flask import Flask, Response, redirect, request, url_for
 from nacl.signing import VerifyKey
 from pyhiccup.core import _convert_tree, html
 from solders.pubkey import Pubkey
@@ -20,7 +20,11 @@ app = Flask(__name__, static_url_path="/resources", static_folder="./resources")
 
 js = lambda e: url_for("static", filename=e)
 
-mem: dict = {"session": {}, "cid": 1}
+mem: dict = {
+    "session": {},
+    "cid": 1,
+    "battles": {}
+}
 
 
 # @app.errorhandler(Exception)
@@ -104,7 +108,7 @@ def challenge():
     resp = Response(
         json.dumps({"cid": cid, "message": challenge}),
         headers={
-            "Set-Cookie": f"ccraft_sess={ref}",
+            "Set-Cookie": f"ccraft_sess={ref}; Path=/",
             "Content-type": "application/json",
         },
     )
@@ -135,9 +139,42 @@ def card(data: dict) -> list[T.Union[str, dict, list]]:
         ["small", {"id": f"c-content-{identifier}", "class": "c-content"}, d["effect"]],
     ]
 
-
-@app.route("/web/part/game/match/new", methods=["GET"])
+@app.route("/web/part/game/match/new", methods=["POST"])
 def new_match():
+    sess_id: str = request.cookies.get("ccraft_sess")
+    battle_ref: str = os.urandom(16).hex()
+
+    if battle_ref in mem["battles"]:
+        raise Exception("Error code 409") # should not happen
+    
+    if any(sess_id in e["players"] for e in mem["battles"].values()):
+        raise Exception("You are already participating in a battle!")
+
+    mem["battles"][battle_ref] = {
+        "players": {
+            "bot1": SimpleNamespace(**{
+                "hp": 100,
+                "hpmax": 100,
+                "name": "BOT1"
+            }),
+            sess_id: SimpleNamespace(**{
+                "hp": 100,
+                "hpmax": 100,
+                "name": sess_id
+            })
+        }
+    }
+
+    return redirect(f"/web/part/game/match/{battle_ref}")
+
+@app.route("/web/part/game/match/<battle_id>", methods=["GET"])
+def load_match(battle_id: str):
+
+    if battle_id is None:
+        raise Exception("Battle not found")
+
+    sess_id: str = request.cookies.get("ccraft_sess")
+
     hand: list[dict] = [
         {
             "name": "Awakening of the Possessed",
@@ -197,7 +234,11 @@ def new_match():
         },
     ]
 
-    return html(
+    pl = mem["battles"][battle_id]["players"][sess_id]
+    op = mem["battles"][battle_id]["players"]["bot1"]
+
+    resp = Response()
+    resp.response = html(
         [
             "div",
             {"class": "game"},
@@ -208,20 +249,25 @@ def new_match():
                     "div",
                     {"class": "opponent"},
                     [
-                        ["p", "OP"],
+                        ["p", f"{op.name} {op.hp}/{op.hpmax}"],
                         ["div", {"class": "hand"}, [card({
                             "name": "?",
                             "effect": "?",
                             "artwork": "https://upload.wikimedia.org/wikipedia/en/2/2b/Yugioh_Card_Back.jpg"
-                        }) for e in range(1, random.randint(1, 7))]]
+                        }) for e in range(0, random.randint(3, 7))]]
                     ]
                 ],
-                ["p", {"class": "battle", "id": "battle"}, "BAT"],
+                ["div", {"class": "battle", "id": "battle"}, [
+                    ["p", "BAT"],
+                    ["div", {"class": "field"}, [["div", {"class": "spot"}, f"spot o{e}"] for e in range(1, 11)]],
+                    ["div", {"class": "divider"}, " "],
+                    ["div", {"class": "field"}, [["div", {"class": "spot"}, f"spot p{e}"] for e in range(1, 11)]],
+                    ]],
                 [
                     "div",
                     {"class": "player"},
                     [
-                        ["p", "PL"],
+                        ["p", f"{pl.name} {pl.hp}/{pl.hpmax}"],
                         ["div", {"class": "hand"}, [card(e) for e in hand]],
                     ],
                 ],
@@ -229,8 +275,23 @@ def new_match():
         ]
     )
 
+    return resp
+
 
 def navigation():
+    sess_id: T.Optional[str] = request.cookies.get("ccraft_sess")
+    authenticated: bool = sess_id is not None and sess_id in mem["session"]
+    identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
+
+    sign_in = [
+        "a",
+        {
+            "id": "connection",
+            "onclick": "window.purse.connect()",
+        },
+        "connect o/"
+    ]
+
     return [
         "nav",
         {"class": "nav-wrapper purple white-text darken-3"},
@@ -244,7 +305,7 @@ def navigation():
             ["li", ["a", {"href": "#menu", "style":"transform: rotate(90deg);"}, "|||"]],
             ["li", ["a", {"href": "/"}, "home"]],
             ["li", ["a", {
-                "hx-get": "/web/part/game/match/new",
+                "hx-post": "/web/part/game/match/new",
                 "hx-target": ".tertiary",
                 "hx-swap": "innerHTML",
                 "class": "btn purple"
@@ -252,14 +313,7 @@ def navigation():
             [
                 "li",
                 {"class": "right"},
-                [
-                    "a",
-                    {
-                        "onclick": "window.purse.connect()",
-                        "title": "connect a wallet",
-                    },
-                    "o/ (connect)",
-                ],
+                sign_in if not authenticated else ["a", identity]
             ],
         ],
     ]
@@ -345,6 +399,7 @@ def hiccpage():
                     ],
                     ["script", {"src": js("app/htmx.min.js")}, " "],
                     ["script", {"src": js("app/json-enc.js")}, " "],
+                    ["script", "htmx.config.withCredentials=true"],
                     ["script", {"src": js("app/bundle.js"), "type": "module"}, " "],
                 ],
             ],
