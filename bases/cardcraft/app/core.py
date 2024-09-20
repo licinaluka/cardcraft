@@ -16,6 +16,7 @@ from solders.pubkey import Pubkey
 from types import SimpleNamespace
 
 from cardcraft.app.controllers.cards import controller as cards, card
+from cardcraft.app.services.db import gamedb
 from cardcraft.app.views.base import hiccpage, trident
 from cardcraft.app.views.navigation import menu
 from cardcraft.app.views.theme import theme
@@ -165,15 +166,14 @@ def new_match():
     return redirect(f"/web/part/game/match/{battle_ref}")
 
 @app.route("/web/part/game/match/<battle_id>", methods=["GET"])
-def load_match(battle_id: str):
+async def load_match(battle_id: str):
 
     if battle_id is None:
         raise Exception("Battle not found")
 
     sess_id: str = request.cookies.get("ccraft_sess")
 
-
-    hand: list[dict] = mem["cards"]
+    hand: list[dict] = await gamedb.cards.find({}).to_list()
 
     pl = mem["battles"][battle_id]["players"][sess_id]
     op = mem["battles"][battle_id]["players"]["bot1"]
@@ -194,7 +194,7 @@ def load_match(battle_id: str):
                         ["div", {"class": "hand"}, [card({
                             "A_value": "?",
                             "D_value": "?",
-                            "C_value": "card-back-ue-pirated.jpg"
+                            "C_value": None
                         }) for e in range(0, random.randint(3, 7))]]
                     ]
                 ],

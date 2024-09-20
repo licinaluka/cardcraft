@@ -69,9 +69,7 @@ def card(data: dict) -> list[T.Union[str, dict, list]]:
 
         return [
             ["hr"],
-            [
-                "p", vals
-            ],
+            ["p", vals],
         ]
 
     return [
@@ -84,7 +82,16 @@ def card(data: dict) -> list[T.Union[str, dict, list]]:
             check("B") and ["p", val("B")],
             check("H") and ["p", val("H")],
             check("I") and ["p", val("I")],
-            ["img", {"src": f"/resources/app/img/{d['C_value']}"}],
+            [
+                "img",
+                {
+                    "src": (
+                        f"/resources/app/img/{d['C_value']}"
+                        if d["C_value"] is not None
+                        else "data:,"
+                    )
+                },
+            ],
         ],
         ["hr"],
         ["J_value" in d and ["p", d["J_value"]]],
@@ -93,7 +100,7 @@ def card(data: dict) -> list[T.Union[str, dict, list]]:
             {"id": f"c-content-{identifier}", "class": "c-content"},
             d["D_value"],
         ],
-        stats()
+        stats(),
     ]
 
 
@@ -166,7 +173,8 @@ async def list_cards():
                                 ["p", e["D_value"]],
                             ]
                             for e in res
-                        ] or ["p", "No cards found"],
+                        ]
+                        or ["p", "No cards found"],
                     ],
                 ],
             ],

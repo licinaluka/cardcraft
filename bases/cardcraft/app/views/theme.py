@@ -180,6 +180,17 @@ img {
   border: 2px solid gold;
 }
 
+.game .opponent .card-render {
+    display: block;
+    background: url('/resources/app/img/card-back-ue-pirated.jpg');
+    background-size: 100% 100%;
+    width: 10em;
+    height: 20em;
+    padding: 1em;
+    margin: 1em;
+    border: none;
+}
+
 .game .card-render .c-image img {
   object-fit: cover;
   object-position: center;
