@@ -8,6 +8,7 @@ import time
 import typing as T
 import uuid
 
+from asgiref.wsgi import WsgiToAsgi
 from flask import Flask, Response, redirect, request, url_for
 from nacl.signing import VerifyKey
 from pyhiccup.core import _convert_tree, html
@@ -22,7 +23,6 @@ from cardcraft.app.mem import mem
 
 app = Flask(__name__, static_url_path="/resources", static_folder="./resources")
 app.register_blueprint(cards)
-
 
 # @app.errorhandler(Exception)
 def exceptions(err):
@@ -248,3 +248,5 @@ def games():
             ],
         ],
     ]
+
+asgi_app = WsgiToAsgi(app)

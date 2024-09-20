@@ -59,5 +59,5 @@ def hiccpage(page):
             ],
         ],
         etype="html5",
-        **{"dir": "ltr"},
+        dir="ltr",
     )

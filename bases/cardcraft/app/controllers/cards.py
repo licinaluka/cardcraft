@@ -7,6 +7,7 @@ from pyhiccup.core import html
 from cardcraft.app.mem import mem
 from cardcraft.app.views.base import hiccpage, trident
 from cardcraft.app.views.navigation import menu, navigation
+from cardcraft.app.services.db import gamedb
 
 controller = Blueprint("cards", __name__)
 
@@ -123,7 +124,9 @@ def card_complexity(level: str) -> list[T.Union[str, dict, list]]:
 
 
 @controller.route("/cards", methods=["GET"])
-def list_cards():
+async def list_cards():
+    res = await gamedb.cards.find({}).to_list()
+
     create_btn = [
         "a",
         {
@@ -162,12 +165,12 @@ def list_cards():
                                 ["span", {"class": "title"}, e["A_value"]],
                                 ["p", e["D_value"]],
                             ]
-                            for e in mem["cards"]
-                        ],
+                            for e in res
+                        ] or ["p", "No cards found"],
                     ],
                 ],
             ],
-            "No card selected",
+            ["p", "No card selected!"],
         )
     )
 
@@ -219,7 +222,7 @@ def new_card():
 
 
 @controller.route("/web/part/game/cards/new", methods=["POST"])
-def store_card():
+async def store_card():
     data: dict = request.form.to_dict()
     data["id"] = os.urandom(16).hex()
 
@@ -234,6 +237,7 @@ def store_card():
     #         data[key] = v
 
     mem["cards"].append(data)
+    await gamedb.cards.insert_one(data)
     return html([card(data)])
 
 
