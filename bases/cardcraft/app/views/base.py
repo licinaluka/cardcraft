@@ -56,6 +56,17 @@ def hiccpage(page):
                 ["script", {"src": js("app/json-enc.js")}, " "],
                 ["script", "htmx.config.withCredentials=true"],
                 ["script", {"src": js("app/bundle.js"), "type": "module"}, " "],
+                ["script", """
+                    function drop(e) {
+                        e.preventDefault()
+                        let id = e.dataTransfer.getData('text')
+                        e.target.appendChild(document.querySelector('#' + id))
+                    }
+
+                    function allowDrop(e) {
+                        e.preventDefault()
+                    }                
+                """]
             ],
         ],
         etype="html5",

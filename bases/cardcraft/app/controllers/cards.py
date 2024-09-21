@@ -47,7 +47,7 @@ if 1 > len(mem["cards"]):
 
 def card(data: dict) -> list[T.Union[str, dict, list]]:
     d: dict = data
-    identifier: str = os.urandom(16).hex()
+    identifier: str = d.get("id", None) or os.urandom(16).hex()
 
     check = lambda e: f"{e}_value" in d
     val = lambda e: d.get(f"{e}_value", None)
@@ -74,14 +74,21 @@ def card(data: dict) -> list[T.Union[str, dict, list]]:
 
     return [
         "a",
-        {"href": f"#c-content-{identifier}", "class": "card-render"},
+        {
+            "id": f"card-{identifier}",
+            "href": f"#card-{identifier}",
+            "class": "card-render",
+            "draggable": True,
+            "ondragstart": "(e=>e.dataTransfer.setData('text', e.target.id))(event)"
+        },
         [
             "div",
             {"class": "c-image"},
+            ["input", {"type": "hidden", "name": "card", "value": identifier}],
             ["div", {"class": "c-title"}, d["A_value"]],
-            check("B") and ["p", val("B")],
-            check("H") and ["p", val("H")],
-            check("I") and ["p", val("I")],
+            ["p", val("B")] if check("B") else None,
+            ["p", val("H")] if check("H") else None,
+            ["p", val("I")] if check("I") else None,
             [
                 "img",
                 {
@@ -94,10 +101,10 @@ def card(data: dict) -> list[T.Union[str, dict, list]]:
             ],
         ],
         ["hr"],
-        ["J_value" in d and ["p", d["J_value"]]],
+        ["p", d["J_value"]] if "J_value" in d else None,
         [
             "small",
-            {"id": f"c-content-{identifier}", "class": "c-content"},
+            {"class": "c-content"},
             d["D_value"],
         ],
         stats(),
@@ -111,7 +118,7 @@ def card_complexity(level: str) -> list[T.Union[str, dict, list]]:
     limit = calc(level)
     return [
         "div",
-        {"href": f"#c-content-{identifier}", "class": "card-render"},
+        {"href": f"#card-{identifier}", "class": "card-render"},
         [
             "div",
             {"class": "c-image"},
@@ -124,7 +131,7 @@ def card_complexity(level: str) -> list[T.Union[str, dict, list]]:
         ],
         ["hr"],
         calc(":J") <= limit and ["p", ":J"],
-        ["small", {"id": f"c-content-{identifier}", "class": "c-content"}, ":D"],
+        ["small", {"id": f"card-{identifier}", "class": "c-content"}, ":D"],
         ["hr"],
         ["p", ["b", ":E"], ["b", ":F"], calc(":G") <= limit and ["b", ":G"]],
     ]

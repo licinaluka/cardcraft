@@ -15,7 +15,8 @@ from pyhiccup.core import _convert_tree, html
 from solders.pubkey import Pubkey
 from types import SimpleNamespace
 
-from cardcraft.app.controllers.cards import controller as cards, card
+from cardcraft.app.controllers.cards import card, controller as cards
+from cardcraft.app.controllers.decks import controller as decks
 from cardcraft.app.services.db import gamedb
 from cardcraft.app.views.base import hiccpage, trident
 from cardcraft.app.views.navigation import menu
@@ -24,6 +25,8 @@ from cardcraft.app.mem import mem
 
 app = Flask(__name__, static_url_path="/resources", static_folder="./resources")
 app.register_blueprint(cards)
+app.register_blueprint(decks)
+
 
 # @app.errorhandler(Exception)
 def exceptions(err):
@@ -35,7 +38,17 @@ def exceptions(err):
 
 @app.route("/")
 def landing():
-    return hiccpage(trident(menu(), games(), ["div", {"style": "padding:2em;"}, "Select a previous match or start a new one"]))
+    return hiccpage(
+        trident(
+            menu(),
+            games(),
+            [
+                "div",
+                {"style": "padding:2em;"},
+                "Select a previous match or start a new one",
+            ],
+        )
+    )
 
 
 @app.route("/api/part/game/authn", methods=["POST"])
@@ -137,33 +150,27 @@ def identity():
 #         ["small", {"id": f"c-content-{identifier}", "class": "c-content"}, d["effect"]],
 #     ]
 
+
 @app.route("/web/part/game/match/new", methods=["POST"])
 def new_match():
     sess_id: str = request.cookies.get("ccraft_sess")
     battle_ref: str = os.urandom(16).hex()
 
     if battle_ref in mem["battles"]:
-        raise Exception("Error code 409") # should not happen
-    
+        raise Exception("Error code 409")  # should not happen
+
     if any(sess_id in e["players"] for e in mem["battles"].values()):
         raise Exception("You are already participating in a battle!")
 
     mem["battles"][battle_ref] = {
         "players": {
-            "bot1": SimpleNamespace(**{
-                "hp": 100,
-                "hpmax": 100,
-                "name": "BOT1"
-            }),
-            sess_id: SimpleNamespace(**{
-                "hp": 100,
-                "hpmax": 100,
-                "name": sess_id
-            })
+            "bot1": SimpleNamespace(**{"hp": 100, "hpmax": 100, "name": "BOT1"}),
+            sess_id: SimpleNamespace(**{"hp": 100, "hpmax": 100, "name": sess_id}),
         }
     }
 
     return redirect(f"/web/part/game/match/{battle_ref}")
+
 
 @app.route("/web/part/game/match/<battle_id>", methods=["GET"])
 async def load_match(battle_id: str):
@@ -191,19 +198,55 @@ async def load_match(battle_id: str):
                     {"class": "opponent"},
                     [
                         ["p", f"{op.name} {op.hp}/{op.hpmax}"],
-                        ["div", {"class": "hand"}, [card({
-                            "A_value": "?",
-                            "D_value": "?",
-                            "C_value": None
-                        }) for e in range(0, random.randint(3, 7))]]
-                    ]
+                        [
+                            "div",
+                            {"class": "hand"},
+                            [
+                                card({"A_value": "?", "D_value": "?", "C_value": None})
+                                for e in range(0, random.randint(3, 7))
+                            ],
+                        ],
+                    ],
                 ],
-                ["div", {"class": "battle", "id": "battle"}, [
-                    ["p", "BAT"],
-                    ["div", {"class": "field"}, [["div", {"class": "spot"}, f"spot o{e}"] for e in range(1, 11)]],
-                    ["div", {"class": "divider"}, " "],
-                    ["div", {"class": "field"}, [["div", {"class": "spot"}, f"spot p{e}"] for e in range(1, 11)]],
-                    ]],
+                [
+                    "div",
+                    {"class": "battle", "id": "battle"},
+                    [
+                        ["p", "BAT"],
+                        [
+                            "div",
+                            {"class": "field"},
+                            [
+                                [
+                                    "div",
+                                    {
+                                        "class": "spot",
+                                        "ondrop": "drop(event)",
+                                        "ondragover": "allowDrop(event)",
+                                    },
+                                    " "
+                                ]
+                                for e in range(1, 11)
+                            ],
+                        ],
+                        ["div", {"class": "divider"}, " "],
+                        [
+                            "div",
+                            {"class": "field"},
+                            [
+                                [
+                                    "div",
+                                    {
+                                        "class": "spot",
+                                        "ondrop": "drop(event)",
+                                        "ondragover": "allowDrop(event)",
+                                    }, " "
+                                ]
+                                for e in range(1, 11)
+                            ],
+                        ],
+                    ],
+                ],
                 [
                     "div",
                     {"class": "player"},
@@ -226,9 +269,7 @@ def games():
 
     return [
         "div",
-        {
-            "class": "no-matches"
-        },
+        {"class": "blank"},
         [
             [
                 "div",
@@ -248,5 +289,6 @@ def games():
             ],
         ],
     ]
+
 
 asgi_app = WsgiToAsgi(app)

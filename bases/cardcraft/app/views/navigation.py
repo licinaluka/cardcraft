@@ -7,7 +7,7 @@ def menu():
     return ["div",
       ["ul", [
         ["li", ["a", {}, "Games"]],
-        ["li", ["a", {}, "Decks"]],
+        ["li", ["a", {"href": "/decks"}, "Decks"]],
         ["li", ["a", {"href": "/cards"}, "Cards"]]]]]
 
 

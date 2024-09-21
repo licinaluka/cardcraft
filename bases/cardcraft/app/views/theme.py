@@ -44,7 +44,7 @@ h1 {
   pointer-events: none;
 }
 
-.no-matches {
+.blank {
   display: flex; justify-content: center; align-items: center; width: auto; height: 100vh
 }
 
@@ -169,12 +169,17 @@ img {
 .game .board .spot {
   padding: 1em;
   margin: 1em;
+  width: 15em;
+  height: 30em;
   border: 1px solid #555;
 }
 
 .game .card-render {
+  background: black;
+  overflow: scroll;
   display: block;
-  max-width: 10em;
+  max-width: 15em;
+  height: 30em;
   padding: 1em;
   margin: 1em;
   border: 2px solid gold;
@@ -383,7 +388,7 @@ img {
     display: none;
   }
 
-  .no-matches {
+  .blank {
     width: 100vw;
   }
 }
