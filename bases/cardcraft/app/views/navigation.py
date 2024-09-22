@@ -38,12 +38,12 @@ def navigation():
             ],
             ["li", ["a", {"onclick": "document.querySelector('#menu').style.display = document.querySelector('#menu').style.display == 'block' ? 'none': 'block'", "style":"transform: rotate(90deg);"}, "|||"]],
             ["li", ["a", {"href": "/"}, "home"]],
-            ["li", ["a", {
-                "hx-post": "/web/part/game/match/new",
-                "hx-target": ".tertiary",
-                "hx-swap": "innerHTML",
-                "class": "btn purple"
-            }, "New game"]],
+            # ["li", ["a", {
+            #     "hx-post": "/web/part/game/match/new",
+            #     "hx-target": ".tertiary",
+            #     "hx-swap": "innerHTML",
+            #     "class": "btn purple"
+            # }, "New game"]],
             [
                 "li",
                 {"class": "right"},

@@ -85,9 +85,9 @@ def card(data: dict) -> list[T.Union[str, dict, list]]:
             "div",
             {"class": "c-image"},
             ["input", {"type": "hidden", "name": "card", "value": identifier}],
+            ["p", val("H")] if check("H") else None,
             ["div", {"class": "c-title"}, d["A_value"]],
             ["p", val("B")] if check("B") else None,
-            ["p", val("H")] if check("H") else None,
             ["p", val("I")] if check("I") else None,
             [
                 "img",
@@ -122,9 +122,9 @@ def card_complexity(level: str) -> list[T.Union[str, dict, list]]:
         [
             "div",
             {"class": "c-image"},
+            calc(":H") <= limit and ["p", ":H"],
             ["div", {"class": "c-title"}, ":A"],
             ["p", ":B"],
-            calc(":H") <= limit and ["p", ":H"],
             calc(":I") <= limit and ["p", ":I"],
             ["p", ":C (artwork)"],
             ["img", {"src": "/resources/app/img/warrior-dude.jpg"}],

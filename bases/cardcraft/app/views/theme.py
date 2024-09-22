@@ -163,14 +163,13 @@ img {
 
 .game .board .field {
   display: flex;
-  flex-wrap: wrap;
 }
 
 .game .board .spot {
   padding: 1em;
   margin: 1em;
-  width: 15em;
-  height: 30em;
+  min-width: 10em;
+  height: 20em;
   border: 1px solid #555;
 }
 
@@ -178,7 +177,7 @@ img {
   background: black;
   overflow: scroll;
   display: block;
-  max-width: 15em;
+  width: 15em;
   height: 30em;
   padding: 1em;
   margin: 1em;

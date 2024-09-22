@@ -17,6 +17,7 @@ from types import SimpleNamespace
 
 from cardcraft.app.controllers.cards import card, controller as cards
 from cardcraft.app.controllers.decks import controller as decks
+from cardcraft.app.controllers.matches import controller as matches
 from cardcraft.app.services.db import gamedb
 from cardcraft.app.views.base import hiccpage, trident
 from cardcraft.app.views.navigation import menu
@@ -26,6 +27,7 @@ from cardcraft.app.mem import mem
 app = Flask(__name__, static_url_path="/resources", static_folder="./resources")
 app.register_blueprint(cards)
 app.register_blueprint(decks)
+app.register_blueprint(matches)
 
 
 # @app.errorhandler(Exception)
@@ -41,7 +43,7 @@ def landing():
     return hiccpage(
         trident(
             menu(),
-            games(),
+            ["span", {"hx-get": "/web/part/game/matches", "hx-trigger": "load"}, " "],
             [
                 "div",
                 {"style": "padding:2em;"},
@@ -127,168 +129,7 @@ def challenge():
     return resp
 
 
-@app.route("/web/part/game/identity")
-def identity():
-    return []
 
-
-# def card(data: dict) -> list[T.Union[str, dict, list]]:
-#     d: dict = data
-#     identifier: str = os.urandom(16).hex()
-#     return [
-#         "a",
-#         {
-#             "href": f"#c-content-{identifier}",
-#             "class": "card-render"
-#         },
-#         [
-#             "div",
-#             {"class": "c-image"},
-#             ["div", {"class": "c-title"}, d["name"]],
-#             ["img", {"src": d["artwork"]}],
-#         ],
-#         ["small", {"id": f"c-content-{identifier}", "class": "c-content"}, d["effect"]],
-#     ]
-
-
-@app.route("/web/part/game/match/new", methods=["POST"])
-def new_match():
-    sess_id: str = request.cookies.get("ccraft_sess")
-    battle_ref: str = os.urandom(16).hex()
-
-    if battle_ref in mem["battles"]:
-        raise Exception("Error code 409")  # should not happen
-
-    if any(sess_id in e["players"] for e in mem["battles"].values()):
-        raise Exception("You are already participating in a battle!")
-
-    mem["battles"][battle_ref] = {
-        "players": {
-            "bot1": SimpleNamespace(**{"hp": 100, "hpmax": 100, "name": "BOT1"}),
-            sess_id: SimpleNamespace(**{"hp": 100, "hpmax": 100, "name": sess_id}),
-        }
-    }
-
-    return redirect(f"/web/part/game/match/{battle_ref}")
-
-
-@app.route("/web/part/game/match/<battle_id>", methods=["GET"])
-async def load_match(battle_id: str):
-
-    if battle_id is None:
-        raise Exception("Battle not found")
-
-    sess_id: str = request.cookies.get("ccraft_sess")
-
-    hand: list[dict] = await gamedb.cards.find({}).to_list()
-
-    pl = mem["battles"][battle_id]["players"][sess_id]
-    op = mem["battles"][battle_id]["players"]["bot1"]
-
-    resp = Response()
-    resp.response = html(
-        [
-            "div",
-            {"class": "game"},
-            [
-                "div",
-                {"class": "board"},
-                [
-                    "div",
-                    {"class": "opponent"},
-                    [
-                        ["p", f"{op.name} {op.hp}/{op.hpmax}"],
-                        [
-                            "div",
-                            {"class": "hand"},
-                            [
-                                card({"A_value": "?", "D_value": "?", "C_value": None})
-                                for e in range(0, random.randint(3, 7))
-                            ],
-                        ],
-                    ],
-                ],
-                [
-                    "div",
-                    {"class": "battle", "id": "battle"},
-                    [
-                        ["p", "BAT"],
-                        [
-                            "div",
-                            {"class": "field"},
-                            [
-                                [
-                                    "div",
-                                    {
-                                        "class": "spot",
-                                        "ondrop": "drop(event)",
-                                        "ondragover": "allowDrop(event)",
-                                    },
-                                    " "
-                                ]
-                                for e in range(1, 11)
-                            ],
-                        ],
-                        ["div", {"class": "divider"}, " "],
-                        [
-                            "div",
-                            {"class": "field"},
-                            [
-                                [
-                                    "div",
-                                    {
-                                        "class": "spot",
-                                        "ondrop": "drop(event)",
-                                        "ondragover": "allowDrop(event)",
-                                    }, " "
-                                ]
-                                for e in range(1, 11)
-                            ],
-                        ],
-                    ],
-                ],
-                [
-                    "div",
-                    {"class": "player"},
-                    [
-                        ["p", f"{pl.name} {pl.hp}/{pl.hpmax}"],
-                        ["div", {"class": "hand"}, [card(e) for e in hand]],
-                    ],
-                ],
-            ],
-        ]
-    )
-
-    return resp
-
-
-def games():
-    matches = []
-    if 0 < len(matches):
-        return [["p", {}, f"game {e}"] for e in matches]
-
-    return [
-        "div",
-        {"class": "blank"},
-        [
-            [
-                "div",
-                {"style": "color: #888; cursor: default; user-select: none"},
-                "No previous games!",
-            ],
-            ["br"],
-            [
-                "a",
-                {
-                    "hx-get": "/web/part/game/match/new",
-                    "hx-target": ".tertiary",
-                    "hx-swap": "innerHTML",
-                    "class": "purple-text",
-                },
-                " ... start one!",
-            ],
-        ],
-    ]
 
 
 asgi_app = WsgiToAsgi(app)
