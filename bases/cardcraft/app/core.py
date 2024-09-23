@@ -2,6 +2,7 @@ import base58
 import json
 import hashlib
 import hmac
+import multiprocessing
 import os
 import random
 import time
@@ -19,16 +20,19 @@ from cardcraft.app.controllers.cards import card, controller as cards
 from cardcraft.app.controllers.decks import controller as decks
 from cardcraft.app.controllers.matches import controller as matches
 from cardcraft.app.services.db import gamedb
+from cardcraft.app.services.match import loop
+from cardcraft.app.services.mem import mem
 from cardcraft.app.views.base import hiccpage, trident
 from cardcraft.app.views.navigation import menu
 from cardcraft.app.views.theme import theme
-from cardcraft.app.mem import mem
 
 app = Flask(__name__, static_url_path="/resources", static_folder="./resources")
 app.register_blueprint(cards)
 app.register_blueprint(decks)
 app.register_blueprint(matches)
 
+p = multiprocessing.Process(target=loop)
+p.start()
 
 # @app.errorhandler(Exception)
 def exceptions(err):
@@ -39,8 +43,8 @@ def exceptions(err):
 
 
 @app.route("/")
-def landing():
-    return hiccpage(
+async def landing():
+    return await hiccpage(
         trident(
             menu(),
             ["span", {"hx-get": "/web/part/game/matches", "hx-trigger": "load"}, " "],
@@ -54,7 +58,7 @@ def landing():
 
 
 @app.route("/api/part/game/authn", methods=["POST"])
-def authn():
+async def authn():
     cid: int = request.json.get("challenge")
     nonce: str = request.json.get("nonce")
     signature: str = request.json.get("signature")
@@ -79,13 +83,19 @@ def authn():
 
     mem["session"][ref]["verification"] = int(time.time())
 
+    await gamedb.sessions.update_one(
+        {"ref": "ref"},
+        {"$set": mem["session"][ref]},
+        upsert=True,
+    )
+
     resp = Response()
     resp.code = 204
     return resp
 
 
 @app.route("/api/part/game/authn/challenge", methods=["POST"])
-def challenge():
+async def challenge():
     ref: T.Optional[str] = request.cookies.get("ccraft_sess")
 
     session = SimpleNamespace()
@@ -112,6 +122,7 @@ def challenge():
     mem["cid"] = mem["cid"] + 1
 
     mem["session"][ref] = {
+        "ref": ref,
         "nonce": nonce,
         "key": key,
         "cid": cid,
@@ -127,9 +138,6 @@ def challenge():
     )
 
     return resp
-
-
-
 
 
 asgi_app = WsgiToAsgi(app)

@@ -4,7 +4,6 @@ import typing as T
 from flask import Blueprint, request
 from pyhiccup.core import html
 
-from cardcraft.app.mem import mem
 from cardcraft.app.views.base import hiccpage, trident
 from cardcraft.app.views.navigation import menu, navigation
 from cardcraft.app.services.db import gamedb
@@ -41,15 +40,12 @@ demo = [
     },
 ]
 
-if 1 > len(mem["cards"]):
-    mem["cards"] += demo
-
 
 def card(data: dict) -> list[T.Union[str, dict, list]]:
     d: dict = data
     identifier: str = d.get("id", None) or os.urandom(16).hex()
 
-    check = lambda e: f"{e}_value" in d
+    check = lambda e: f"{e}_value" in d and d.get(f"{e}_value", None)
     val = lambda e: d.get(f"{e}_value", None)
 
     def stats():
@@ -88,7 +84,7 @@ def card(data: dict) -> list[T.Union[str, dict, list]]:
             ["p", val("H")] if check("H") else None,
             ["div", {"class": "c-title"}, d["A_value"]],
             ["p", val("B")] if check("B") else None,
-            ["p", val("I")] if check("I") else None,
+            # ["p", val("I")] if check("I") else None,
             [
                 "img",
                 {
@@ -151,7 +147,7 @@ async def list_cards():
         "create a card",
     ]
 
-    return hiccpage(
+    return await hiccpage(
         trident(
             menu(),
             [
@@ -190,11 +186,11 @@ async def list_cards():
     )
 
 
-@controller.route("/web/part/game/cards/<id>", methods=["GET"])
-def show_card(id: str):
-    c: T.Optional[dict] = next(filter(lambda e: e["id"] == id, mem["cards"]), None)
+@controller.route("/web/part/game/cards/<card_id>", methods=["GET"])
+async def show_card(card_id: str):
+    c: T.Optional[dict] = await gamedb.cards.find_one({"id": card_id})
     if c is None:
-        raise Exception(f"Card {id} not found!")
+        raise Exception(f"Card {card_id} not found")
 
     return html(["div", {"class": "game"}, card(c)])
 
@@ -206,6 +202,7 @@ def new_card():
             "div",
             {"class": "game"},
             [
+                ["h3", "Card builder"],
                 ["p", "Select a layout/complexity:"],
                 [
                     "div",
@@ -241,17 +238,6 @@ async def store_card():
     data: dict = request.form.to_dict()
     data["id"] = os.urandom(16).hex()
 
-    # key: T.Optional[str] = None
-
-    # for k, v in request.form.to_dict().items():
-    #     _, node = k.split("_")
-    #     if node == "key":
-    #         key = v
-
-    #     if node == "value":
-    #         data[key] = v
-
-    mem["cards"].append(data)
     await gamedb.cards.insert_one(data)
     return html([card(data)])
 

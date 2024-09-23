@@ -18,7 +18,7 @@ def trident(a, b, c):
     ]
 
 
-def hiccpage(page):
+async def hiccpage(page):
     return html(
         [
             [
@@ -50,7 +50,7 @@ def hiccpage(page):
             [
                 "body",
                 {"hx-boost": "true"},
-                navigation(),
+                await navigation(),
                 page,
                 ["script", {"src": js("app/htmx.min.js")}, " "],
                 ["script", {"src": js("app/json-enc.js")}, " "],

@@ -173,8 +173,23 @@ img {
   border: 1px solid #555;
 }
 
+.game .deck-back-render {
+  border: 1px solid gold;
+  margin: 3px 3px;
+  width: 10em;
+  height: 18em;
+  background: url('/resources/app/img/card-back-ue-pirated.jpg');
+  background-size: 100% 100%;
+}
+
+.glow {
+  box-shadow: 1px 1px 10px 3px lightblue;
+  cursor: pointer;
+}
+
 .game .card-render {
   background: black;
+  margin: 2px;
   overflow: scroll;
   display: block;
   width: 15em;

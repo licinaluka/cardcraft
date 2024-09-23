@@ -1,7 +1,8 @@
 import typing as T
 
 from flask import request
-from cardcraft.app.mem import mem
+from cardcraft.app.services.db import gamedb
+from cardcraft.app.services.mem import mem
 
 def menu():
     return ["div",
@@ -12,8 +13,14 @@ def menu():
 
 
 
-def navigation():
+async def navigation():
     sess_id: T.Optional[str] = request.cookies.get("ccraft_sess")
+
+    if sess_id is not None:
+        session = await gamedb.sessions.find_one({"ref": sess_id})
+        if session is not None and sess_id not in mem["session"]:
+            mem["session"][sess_id] = session
+
     authenticated: bool = sess_id is not None and sess_id in mem["session"]
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
 
@@ -23,7 +30,7 @@ def navigation():
             "id": "connection",
             "onclick": "window.purse.connect()",
         },
-        "connect o/"
+        identity or "connect o/"
     ]
 
     return [
