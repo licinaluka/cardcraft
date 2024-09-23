@@ -57,10 +57,23 @@ async def hiccpage(page):
                 ["script", "htmx.config.withCredentials=true"],
                 ["script", {"src": js("app/bundle.js"), "type": "module"}, " "],
                 ["script", """
-                    function drop(e) {
+                    async function drop(e) {
                         e.preventDefault()
                         let id = e.dataTransfer.getData('text')
-                        e.target.appendChild(document.querySelector('#' + id))
+                        let card_id = id.replace('card-', '')
+
+                        let el = document.querySelector('#' + id)
+                        e.target.appendChild(el)
+
+                        await fetch(
+                            `/web/part/game/matches/current/do`,
+                            {
+                                method: 'POST',
+                                credentials: 'include',
+                                body: JSON.stringify({'event': ['identity', 'play', `h-${card_id}, ${e.target.parentNode.id}`]}),
+                                headers: {'Content-Type': 'application/json'}
+                            }
+                        )
                     }
 
                     function allowDrop(e) {

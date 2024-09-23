@@ -114,10 +114,18 @@ async def show_match(match_id: str):
     op = game.players[opkey]
 
     Nemesis(opkey).do(match=game)
+    await gamedb.matches.update_one({"id": game.id}, {"$set": {"turns": game.turns}})
 
     hand = await gamedb.cards.find(
         {"id": {"$in": game.players[identity]["hand"]}}
     ).to_list()
+
+    fields = {
+        e["id"]: e
+        for e in await gamedb.cards.find(
+            {"id": {"$in": [e for f in game.fields for e in f if e is not None]}}
+        ).to_list()
+    }
 
     resp = Response()
     resp.response = _convert_tree(
@@ -180,61 +188,27 @@ async def show_match(match_id: str):
                             [
                                 ["p", "BAT"],
                                 [
-                                    "div",
-                                    {"class": "field"},
                                     [
+                                        "div",
+                                        {"class": "field"},
                                         [
-                                            "div",
-                                            {
-                                                "class": "spot",
-                                                "ondrop": "drop(event)",
-                                                "ondragover": "allowDrop(event)",
-                                            },
-                                            " ",
-                                        ]
-                                        for e in range(1, 6)
-                                    ],
-                                    [
-                                        [
-                                            "div",
-                                            {
-                                                "class": "spot",
-                                                "ondrop": "drop(event)",
-                                                "ondragover": "allowDrop(event)",
-                                            },
-                                            " ",
-                                        ]
-                                        for e in range(6, 11)
-                                    ],
-                                ],
-                                ["div", {"class": "divider"}, " "],
-                                [
-                                    "div",
-                                    {"class": "field"},
-                                    [
-                                        [
-                                            "div",
-                                            {
-                                                "class": "spot",
-                                                "ondrop": "drop(event)",
-                                                "ondragover": "allowDrop(event)",
-                                            },
-                                            " ",
-                                        ]
-                                        for e in range(1, 6)
-                                    ],
-                                    [
-                                        [
-                                            "div",
-                                            {
-                                                "class": "spot",
-                                                "ondrop": "drop(event)",
-                                                "ondragover": "allowDrop(event)",
-                                            },
-                                            " ",
-                                        ]
-                                        for e in range(6, 11)
-                                    ],
+                                            [
+                                                "div",
+                                                {"id": f"f-{i}-{j}"},
+                                                [
+                                                    "div",
+                                                    {
+                                                        "class": "spot",
+                                                        "ondrop": "drop(event)",
+                                                        "ondragover": "allowDrop(event)",
+                                                    },
+                                                    card(fields[spot]) if spot is not None else " ",
+                                                ],
+                                            ]
+                                            for j, spot in enumerate(field)
+                                        ],
+                                    ]
+                                    for i, field in enumerate(game.fields)
                                 ],
                             ],
                         ],
@@ -243,35 +217,46 @@ async def show_match(match_id: str):
                             {"class": "player"},
                             [
                                 ["p", f"{pl['name']} {pl['hp']}/{pl['hpmax']}"],
-                                ["div", {"class": "hand"}, [card(e) for e in hand]],
                                 [
-                                    (
-                                        [
-                                            "div",
-                                            {
-                                                "class": "deck-back-render glow",
-                                                "hx-post": f"/web/part/game/matches/{match_id}/do",
-                                                "hx-vals": "js:{"
-                                                + f"event: ['{identity}', 'draw', '1']"
-                                                + "}",
-                                                "hx-ext": "json-enc",
-                                                "hx-trigger": "click",
-                                                "hx-swap": "none",
-                                            },
-                                            " ",
-                                        ]
-                                        if (
-                                            game.get(
-                                                "is_turn",
-                                                Target.Player,
-                                                identity,
+                                    "div",
+                                    {"class": "hand"},
+                                    [
+                                        card(dict(e, handidx=i))
+                                        for i, e in enumerate(hand)
+                                    ],
+                                ],
+                                (
+                                    [
+                                        (
+                                            [
+                                                "div",
+                                                {
+                                                    "class": "deck-back-render glow",
+                                                    "hx-post": f"/web/part/game/matches/{match_id}/do",
+                                                    "hx-vals": "js:{"
+                                                    + f"event: ['{identity}', 'draw', '1']"
+                                                    + "}",
+                                                    "hx-ext": "json-enc",
+                                                    "hx-trigger": "click",
+                                                    "hx-swap": "none",
+                                                },
+                                                " ",
+                                            ]
+                                            if (
+                                                game.get(
+                                                    "is_turn",
+                                                    Target.Player,
+                                                    identity,
+                                                )
+                                                and i == (len(deck) - 1)
                                             )
-                                            and i == (len(deck) - 1)
+                                            else ["div", {"class": "deck-back-render"}]
                                         )
-                                        else ["div", {"class": "deck-back-render"}, " "]
-                                    )
-                                    for i, _ in enumerate(deck)
-                                ] if 0 < len(deck) else ["p", "No cards left in deck"],
+                                        for i, _ in enumerate(deck)
+                                    ]
+                                    if 0 < len(deck)
+                                    else ["p", "No cards left in deck"]
+                                ),
                             ],
                         ],
                     ],
@@ -375,6 +360,7 @@ async def new_match():
     await gamedb.matches.insert_one(
         {
             "id": battle_ref,
+            "fields": [[None for spot in range(0, 5)] for field in range(0, 4)],
             "players": {
                 "bot1": {
                     "hp": 50000,
@@ -394,7 +380,7 @@ async def new_match():
             "opener": opener,
             "finished": None,
             "cursor": [0, 0],
-            "turns": [[[opener, "draw", 5], [second, "draw", 5]]],  # turn 1  # turn 2
+            "turns": [[[opener, "draw", 3], [second, "draw", 3]]],  # turn 1  # turn 2
             "futures": {},
         }
     )
@@ -411,13 +397,20 @@ async def match_add_event(match_id: str):
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
     assert identity is not None
+
+    if e == "identity":
+        e = identity
+
     assert identity == e
 
     lookup = {
-        "id": match_id,
         f"players.{identity}": {"$exists": True},
         "finished": None,
     }
+
+    if match_id != "current":
+        lookup["id"] = match_id
+
     match = await gamedb.matches.find_one(lookup)
     assert match is not None
 
