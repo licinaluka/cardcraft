@@ -4,9 +4,10 @@ import typing as T
 from flask import Blueprint, request
 from pyhiccup.core import html
 
+from cardcraft.app.services.db import gamedb
+from cardcraft.app.services.match import Match
 from cardcraft.app.views.base import hiccpage, trident
 from cardcraft.app.views.navigation import menu, navigation
-from cardcraft.app.services.db import gamedb
 
 controller = Blueprint("cards", __name__)
 
@@ -75,7 +76,7 @@ def card(data: dict) -> list[T.Union[str, dict, list]]:
             "href": f"#card-{identifier}",
             "class": "card-render",
             "draggable": True,
-            "ondragstart": "(e=>e.dataTransfer.setData('text', e.target.id))(event)"
+            "ondragstart": "(e=>e.dataTransfer.setData('text', e.target.id))(event)",
         },
         [
             "div",
@@ -280,6 +281,30 @@ def new_card_next(level: str):
                         for e in range(ord("A"), ord(level) + 1)
                     ],
                     ["button", {"type": "submit"}, "Save"],
+                ],
+            ],
+            [
+                ["h4", "Card effect API (for field 'I'):"],
+                [
+                    "table",
+                    [
+                        ["tr", ["th", "function"], ["th", "description"]],
+                        [
+                            [
+                                "tr",
+                                ["td", fn],
+                                [
+                                    "td",
+                                    [
+                                        ["p", ln]
+                                        for ln in getattr(Match, fn).__doc__.split("\n")
+                                    ],
+                                ],
+                            ]
+                            for fn in dir(Match)
+                            if fn.startswith("v1_")
+                        ],
+                    ],
                 ],
             ],
         ]
