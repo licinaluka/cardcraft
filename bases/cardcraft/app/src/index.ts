@@ -1,9 +1,10 @@
 
 import bs58 from "bs58"
-import { WalletAdapterNetwork, BaseMessageSignerWalletAdapter } from  "@solana/wallet-adapter-base"
+import { Buffer } from 'buffer'
+import { WalletAdapterNetwork, BaseMessageSignerWalletAdapter } from "@solana/wallet-adapter-base"
 import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare"
 import { clusterApiUrl } from "@solana/web3"
-import { PublicKey } from "@solana/web3.js"
+import { Connection, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js"
 
 import { greeter } from "./thing.ts"
 
@@ -13,50 +14,51 @@ type AuthnChallenge {
 }
 
 class Purse {
-    wallet?: BaseMessageSignerWalletAdapter;
+    wallet?: BaseMessageSignerWalletAdapter
+
     btn: Element | null
-    
+
     constructor() {
         this.btn = document.querySelector("#connection")
     }
-    
+
     /** */
-    async connect(net?: WalletAdapterNetwork = WalletAdapterNetwork.Devnet) : Promise<void> {
-        this.wallet = await new SolflareWalletAdapter({network: net})
+    async connect(net?: WalletAdapterNetwork = WalletAdapterNetwork.Devnet): Promise<void> {
+        this.wallet = await new SolflareWalletAdapter({ network: net })
         await this.wallet.connect()
-        
+
         if (this.btn) {
             this.btn.setAttribute("onclick", "window.purse.signIn()")
             this.btn.innerHTML = "sign in o/"
         }
     }
-    
+
     /** */
-    identity() : PublicKey | null {
-        if (! this.wallet) {
+    identity(): PublicKey | null {
+        if (!this.wallet) {
             throw 'Wallet not connected!'
         }
-        
+
         return this.wallet?.publicKey;
     }
-    
+
     /** */
-    async sign(message: string) : Promise<string> {
+    async sign(message: string): Promise<string> {
         let b: Uint8Array = bs58.decode(message)
         let signed: Uint8Array | undefined = await this.wallet?.signMessage(b)
-        if (! signed) {
+        if (!signed) {
             throw 'Failed to sign message!'
         }
-        
+
         return bs58.encode(signed)
     }
-    
+
     /** 
     *
     */
     async signIn() {
         // exchange nonces with the server
-        let nonce = bs58.encode(crypto.getRandomValues(new Uint8Array(Array.from({length: 12}))))
+        let nonce = bs58.encode(crypto.getRandomValues(new Uint8Array(Array.from({ length: 12 }))))
 
         // obtain login challenge
         let resp = await fetch(
@@ -80,7 +82,7 @@ class Purse {
         }
 
         let challenge: AuthnChallenge = await resp.json()
-        
+
         // sign login challenge
         let signature: string = await this.sign(challenge.message)
 
@@ -105,6 +107,40 @@ class Purse {
             this.btn.innerHTML = `${this.identity()}`
         }
     }
+
+    /** */
+    async pot(escrow: string, lamports: number): Promise<string> {
+        await this.connect()
+
+        console.log(lamports)
+
+        let temp = this.identity()
+        if (!temp) {
+            throw 'Wallet not connected!'
+        }
+
+        let identity: PublicKey = temp
+        let connection: Connection = new Connection("https://api.devnet.solana.com", "confirmed")
+
+        try {
+            const transaction = new Transaction()
+            const sendSolInstruction = SystemProgram.transfer({
+                fromPubkey: identity,
+                toPubkey: new PublicKey(escrow),
+                lamports: lamports,
+            })
+
+            transaction.add(sendSolInstruction)
+
+            const signature = await this.wallet?.sendTransaction(transaction, connection)
+            console.log(`Transaction signature: ${signature}`)
+
+        } catch (error) {
+            console.error("Transaction failed", error);
+        }
+
+    }
 }
 
+globalThis.Buffer = Buffer
 window.purse = new Purse()

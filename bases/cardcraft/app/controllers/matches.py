@@ -202,7 +202,11 @@ async def show_match(match_id: str):
                                                         "ondrop": "drop(event)",
                                                         "ondragover": "allowDrop(event)",
                                                     },
-                                                    card(fields[spot]) if spot is not None else " ",
+                                                    (
+                                                        card(fields[spot])
+                                                        if spot is not None
+                                                        else " "
+                                                    ),
                                                 ],
                                             ]
                                             for j, spot in enumerate(field)
@@ -288,6 +292,8 @@ async def new_match_deck_selection():
         # player has no decks, use a pre-defined starter deck
         pass
 
+    system_pubkey = "714i5Rf1du12hR7T21bVhJ4xikUpVtBNg4WKkeUjHgco" # FOR TESTING
+
     return _convert_tree(
         [
             "div",
@@ -318,6 +324,21 @@ async def new_match_deck_selection():
                             for deck in decks
                         ],
                     ],
+                    [
+                        "label",
+                        {"for": "#pot-lamports"},
+                        [
+                            "input",
+                            {
+                                "id": "pot-lamports",
+                                "type": "number",
+                                "name": "lamports",
+                                "min": 0,
+                                "placeholder": "Choose 0..N Lamports to put in match pot",
+                            },
+                        ],
+                    ],
+                    ["a", {"class": "btn", "onclick": f"window.purse.pot('{system_pubkey}', document.querySelector('#pot-lamports').value)"}, "Add to pot"], 
                     ["input", {"type": "submit"}],
                 ],
             ],
