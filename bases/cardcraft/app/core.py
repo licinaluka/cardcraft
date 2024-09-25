@@ -5,6 +5,7 @@ import hmac
 import multiprocessing
 import os
 import random
+import signal
 import time
 import typing as T
 import uuid
@@ -33,6 +34,7 @@ app.register_blueprint(matches)
 
 p = multiprocessing.Process(target=loop)
 p.start()
+signal.signal(signal.SIGINT, lambda *a: p.join())
 
 # @app.errorhandler(Exception)
 def exceptions(err):
