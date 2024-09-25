@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import logging
+import multiprocessing
 import random
 import time
 import typing as T
@@ -11,14 +12,17 @@ from cardcraft.app.services.db import gamedb
 from cardcraft.app.services.mem import mem
 
 
-def loop():
+def loop(lock: multiprocessing.Lock):
     async def game():
-        while True:
-            async for match in gamedb.matches.find({}):
-                state = Match.create(match)
-                state.move()
-                then = state._asdict()
-                await gamedb.matches.replace_one({"id": then["id"]}, then)
+        with lock:
+            while True:        
+                async for match in gamedb.matches.find({}):
+                    state = Match.create(match)
+                    state.move()
+                    then = state._asdict()
+                    await gamedb.matches.replace_one({"id": then["id"]}, then)
+                    await asyncio.sleep(5)
+                    
                 time.sleep(5)
 
     asyncio.run(game())

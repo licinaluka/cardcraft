@@ -32,7 +32,8 @@ app.register_blueprint(cards)
 app.register_blueprint(decks)
 app.register_blueprint(matches)
 
-p = multiprocessing.Process(target=loop)
+lock = multiprocessing.Lock()
+p = multiprocessing.Process(target=loop, args=(lock,))
 p.start()
 signal.signal(signal.SIGINT, lambda *a: p.join())
 
