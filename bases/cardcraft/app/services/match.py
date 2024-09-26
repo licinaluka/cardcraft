@@ -50,8 +50,11 @@ class Match(T.NamedTuple):
     # player with first turn
     opener: str
 
+    # when the match was created
+    created: T.Optional[int]
+
     # when the match was finished
-    finished: T.Optional[str]
+    finished: T.Optional[int]
 
     # reserved events for future turns
     futures: dict[list[Event]] = {}

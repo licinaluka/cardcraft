@@ -1,6 +1,8 @@
+import functools
 import json
 import os
 import random
+import time
 
 from flask import Blueprint, Response, redirect, request
 from pyhiccup.core import _convert_tree, html
@@ -10,6 +12,7 @@ from cardcraft.app.controllers.cards import card
 from cardcraft.app.services.db import gamedb
 from cardcraft.app.services.match import Match, Nemesis, Target
 from cardcraft.app.services.mem import mem
+from cardcraft.app.services.pot import pot
 
 controller = Blueprint("matches", __name__)
 
@@ -292,8 +295,6 @@ async def new_match_deck_selection():
         # player has no decks, use a pre-defined starter deck
         pass
 
-    system_pubkey = "714i5Rf1du12hR7T21bVhJ4xikUpVtBNg4WKkeUjHgco" # FOR TESTING
-
     return _convert_tree(
         [
             "div",
@@ -338,7 +339,8 @@ async def new_match_deck_selection():
                             },
                         ],
                     ],
-                    ["a", {"class": "btn", "onclick": f"window.purse.pot('{system_pubkey}', document.querySelector('#pot-lamports').value)"}, "Add to pot"], 
+                    ["input", {"type": "hidden", "name": "txsig"}],
+                    ["a", {"class": "btn", "onclick": f"window.purse.pot('{pot.sys.pubkey()}', document.querySelector('#pot-lamports').value)"}, "Add to pot"], 
                     ["input", {"type": "submit"}],
                 ],
             ],
@@ -354,6 +356,7 @@ async def new_match():
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
     assert identity is not None
 
+    # deck selection
     deck_id: str = request.form.get("deck_id")
     deck_pl: T.Optional[dict] = await gamedb.decks.find_one(
         {"owner": identity, "id": deck_id}
@@ -361,6 +364,11 @@ async def new_match():
 
     assert deck_pl is not None
 
+    # pot
+    lamports: int = int(request.form.get("lamports") or 0)
+    txsig: T.Optional[str] = request.form.get("txsig") or None
+
+    # create match
     battle_ref: str = os.urandom(16).hex()
 
     unfinished = await gamedb.matches.find(
@@ -370,7 +378,7 @@ async def new_match():
     if 0 < len(unfinished):
         raise Exception("You are already participating in a match!")
 
-    battle = await gamedb.games.find_one({"ref": battle_ref})
+    battle = await gamedb.matches.find_one({"ref": battle_ref})
 
     if battle is not None:
         raise Exception("Error code 409")  # should not happen
@@ -378,12 +386,34 @@ async def new_match():
     players = ["bot1", identity]
     opener = random.choice(players)
     second = next(e for e in players if e != opener)
+
+    # resolve bot pot
+    lookup = {"players.bot1": {"$exists": True}, "player.bot1.txsig": {"$ne": None}}
+    
+    prev: list[dict] = await gamedb.matches.find(lookup).sort({"started": -1}).limit(1).to_list()
+    prev_pot: dict = next(iter(prev), {})
+
+    limit: int = int(os.getenv("BOT_POT_LAMPORT_MAX", 0))
+    derived: int = match.ceil(
+        0.5 * min(
+            limit,
+            (functools.reduce(lambda a, e: a.get(e, {}), ["players", "bot1", "pot", "lamports"], prev_pot) or 0)
+        )
+    )
+
+    if pot.get_bot_balance(idx=1) <= derived:
+        derived = 0
+
     await gamedb.matches.insert_one(
         {
             "id": battle_ref,
             "fields": [[None for spot in range(0, 5)] for field in range(0, 4)],
             "players": {
                 "bot1": {
+                    "pot": {
+                        "lamports": derived,
+                        "txsig": None
+                    },
                     "hp": 50000,
                     "hpmax": 5000,
                     "name": "BOT1",
@@ -391,6 +421,10 @@ async def new_match():
                     "hand": [],
                 },
                 identity: {
+                    "pot": {
+                        "lamports": lamports,
+                        "txsig": txsig
+                    },
                     "hp": 50000,
                     "hpmax": 5000,
                     "name": sess_id,
@@ -399,6 +433,7 @@ async def new_match():
                 },
             },
             "opener": opener,
+            "created": int(time.time()),
             "finished": None,
             "cursor": [0, 0],
             "turns": [[[opener, "draw", 3], [second, "draw", 3]]],  # turn 1  # turn 2

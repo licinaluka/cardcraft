@@ -121,6 +121,11 @@ class Purse {
 
         let identity: PublicKey = temp
         let connection: Connection = new Connection("https://api.devnet.solana.com", "confirmed")
+        let txSigField: Element | null = document.querySelector('input[name=txsig')
+
+        if (!txSigField) {
+            throw 'Cannot find txsig field!'
+        }
 
         try {
             const transaction = new Transaction()
@@ -132,9 +137,10 @@ class Purse {
 
             transaction.add(sendSolInstruction)
 
-            const signature = await this.wallet?.sendTransaction(transaction, connection)
-            console.log(`Transaction signature: ${signature}`)
+            let signature: string | undefined = await this.wallet?.sendTransaction(transaction, connection)
+            localStorage.setItem('txsig', signature)
 
+            txSigField.value = signature
         } catch (error) {
             console.error("Transaction failed", error);
         }
