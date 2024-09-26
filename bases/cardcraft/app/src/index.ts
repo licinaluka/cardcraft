@@ -138,7 +138,7 @@ class Purse {
             transaction.add(sendSolInstruction)
 
             let signature: string | undefined = await this.wallet?.sendTransaction(transaction, connection)
-            localStorage.setItem('txsig', signature)
+            document.cookie = `'txsig=${signature};max-age=60`
 
             txSigField.value = signature
         } catch (error) {

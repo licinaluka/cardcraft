@@ -1,5 +1,6 @@
 import functools
 import json
+import math
 import os
 import random
 import time
@@ -140,17 +141,18 @@ async def show_match(match_id: str):
                     [
                         "a",
                         {
-                            "class": "game-refresh-trigger",
+                            "class": "btn purple game-refresh-trigger",
                             "hx-get": f"/web/part/game/matches/{match_id}",
                             "hx-target": ".tertiary",
                             "hx-trigger": "every 5s",
                         },
                         "Refresh",
                     ],
+                    ["span", " | "],
                     [
                         "a",
                         {
-                            "class": "btn danger",
+                            "class": "btn red",
                             "hx-post": f"/web/part/game/matches/{match_id}/do",
                             "hx-vals": "js:{"
                             + f"event: ['{identity}', 'end_turn', null]"
@@ -160,6 +162,18 @@ async def show_match(match_id: str):
                             "hx-swap": "none",
                         },
                         "End turn",
+                    ],
+                    ["span", " | "],
+                    [
+                        "div",
+                        {
+                            "id": "match-pot",
+                            "class": "btn black",
+                            # "hx-get": f"/web/part/game/matches/{match_id}/pot-status",
+                            # "hx-target": "#match-pot",
+                            # "hx-trigger": "load 2s"
+                        },
+                        f"POT: {await show_match_pot_status(match_id)}"
                     ],
                     [
                         "div",
@@ -325,27 +339,77 @@ async def new_match_deck_selection():
                             for deck in decks
                         ],
                     ],
+                    ["small", {"class": "red-text"}, "*Required"],
+                    ["br"],
                     [
                         "label",
                         {"for": "#pot-lamports"},
                         [
-                            "input",
-                            {
-                                "id": "pot-lamports",
-                                "type": "number",
-                                "name": "lamports",
-                                "min": 0,
-                                "placeholder": "Choose 0..N Lamports to put in match pot",
-                            },
+                            [
+                                "input",
+                                {
+                                    "id": "pot-lamports",
+                                    "type": "number",
+                                    "name": "lamports",
+                                    "min": pot.get_pot_fee(1),
+                                    "placeholder": "Lamports to put in match pot",
+                                    "hx-trigger": "change, keyup",
+                                    "hx-target": "#pot-message",
+                                    "hx-post": "/web/part/game/matches/new/pot-fee",
+                                    "hx-ext": "json-enc"
+                                },
+                            ],
+                            ["span", {"id": "pot-message"}, " "],                            
                         ],
                     ],
+                    ["br"],
                     ["input", {"type": "hidden", "name": "txsig"}],
-                    ["a", {"class": "btn", "onclick": f"window.purse.pot('{pot.sys.pubkey()}', document.querySelector('#pot-lamports').value)"}, "Add to pot"], 
-                    ["input", {"type": "submit"}],
+                    ["br"],
+                    [
+                        "a",
+                        {
+                            "class": "btn purple darken-1",
+                            "onclick": f"window.purse.pot('{pot.sys.pubkey()}', document.querySelector('#pot-lamports').value)",
+                        },
+                        "Add to pot",
+                    ],
+                    ["span", " | "],
+                    ["button", {"class": "btn purple lighten-1", "type": "submit"}, "Start"],
                 ],
             ],
         ]
     )
+    
+@controller.route("/web/part/game/matches/new/pot-fee", methods=["POST"])
+async def new_match_pot_fee():
+    amount: int = int(request.json.get("lamports") or 0)
+    fee: int = pot.get_pot_fee(amount)
+    is_ok: bool = (fee * 1.2) < amount
+
+    return _convert_tree(
+        [
+            "span",
+            {
+                "id": "pot-message",
+                "class": "green-text" if is_ok else "red-text"
+            },
+            f"Minimum fees expected: {fee} Lamports"
+        ]
+    )
+
+@controller.route("/web/part/game/matches/<match_id>/pot-status", methods=["GET"])
+async def show_match_pot_status(match_id: str):
+    match: dict = await gamedb.matches.find_one({"id": match_id})
+
+    total: int = 0
+
+    for name in match["players"].keys():
+        _: dict = match["players"][name]["pot"]
+        if _["txsig"] is not None and _["lamports"] > 0:
+            total += pot.get_transaction_details(_["txsig"], commitment="confirmed").amount
+
+    # return _convert_tree(["b", f"{total}"])
+    return total        
 
 
 @controller.route("/web/part/game/matches/new", methods=["POST"])
@@ -365,7 +429,8 @@ async def new_match():
     assert deck_pl is not None
 
     # pot
-    lamports: int = int(request.form.get("lamports") or 0)
+    pot: bool = request.form.get("pot") or False
+    lamports: int = 0 if not pot else int(request.form.get("lamports") or 0)
     txsig: T.Optional[str] = request.form.get("txsig") or None
 
     # create match
@@ -389,20 +454,37 @@ async def new_match():
 
     # resolve bot pot
     lookup = {"players.bot1": {"$exists": True}, "player.bot1.txsig": {"$ne": None}}
-    
-    prev: list[dict] = await gamedb.matches.find(lookup).sort({"started": -1}).limit(1).to_list()
+
+    prev: list[dict] = (
+        await gamedb.matches.find(lookup).sort({"started": -1}).limit(1).to_list()
+    )
     prev_pot: dict = next(iter(prev), {})
 
     limit: int = int(os.getenv("BOT_POT_LAMPORT_MAX", 0))
-    derived: int = match.ceil(
-        0.5 * min(
+    derived: int = math.ceil(
+        0.5
+        * min(
             limit,
-            (functools.reduce(lambda a, e: a.get(e, {}), ["players", "bot1", "pot", "lamports"], prev_pot) or 0)
+            (
+                functools.reduce(
+                    lambda a, e: a.get(e, {}),
+                    ["players", "bot1", "pot", "lamports"],
+                    prev_pot,
+                )
+                or 0
+            ),
         )
     )
 
-    if pot.get_bot_balance(idx=1) <= derived:
-        derived = 0
+    # has the amount
+    if derived > 0:
+        if pot.get_bot_balance(idx=1) <= derived:
+            derived = 0
+
+    # check if the amount makes sense
+    if derived > 0:
+        if (pot.get_pot_fee(derived) * 5) >= derived:
+            derived = 0
 
     await gamedb.matches.insert_one(
         {
@@ -410,10 +492,7 @@ async def new_match():
             "fields": [[None for spot in range(0, 5)] for field in range(0, 4)],
             "players": {
                 "bot1": {
-                    "pot": {
-                        "lamports": derived,
-                        "txsig": None
-                    },
+                    "pot": {"lamports": derived, "txsig": None},
                     "hp": 50000,
                     "hpmax": 5000,
                     "name": "BOT1",
@@ -421,10 +500,7 @@ async def new_match():
                     "hand": [],
                 },
                 identity: {
-                    "pot": {
-                        "lamports": lamports,
-                        "txsig": txsig
-                    },
+                    "pot": {"lamports": lamports, "txsig": txsig},
                     "hp": 50000,
                     "hpmax": 5000,
                     "name": sess_id,
