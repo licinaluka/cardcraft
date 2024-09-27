@@ -11,7 +11,8 @@ from types import SimpleNamespace
 
 from cardcraft.app.controllers.cards import card
 from cardcraft.app.services.db import gamedb
-from cardcraft.app.services.match import Match, Nemesis, Target
+from cardcraft.app.services.match import Match, Target
+from cardcraft.app.services.nemesis import Nemesis
 from cardcraft.app.services.mem import mem
 from cardcraft.app.services.pot import pot
 
@@ -117,12 +118,11 @@ async def show_match(match_id: str):
     opkey = next(filter(lambda e: e != identity, match["players"].keys()), None)
     op = game.players[opkey]
 
-    Nemesis(opkey).do(match=game)
-    await gamedb.matches.update_one({"id": game.id}, {"$set": {"turns": game.turns}})
-
     hand = await gamedb.cards.find(
         {"id": {"$in": game.players[identity]["hand"]}}
     ).to_list()
+
+    ophand = await gamedb.cards.find({"id": {"$in": game.players[opkey]["hand"]}}).to_list()
 
     fields = {
         e["id"]: e
@@ -194,7 +194,7 @@ async def show_match(match_id: str):
                                                 "C_value": None,
                                             }
                                         )
-                                        for e in range(0, random.randint(3, 7))
+                                        for i, e in enumerate(ophand)
                                     ],
                                 ],
                             ],
@@ -426,6 +426,11 @@ async def new_match():
         {"owner": identity, "id": deck_id}
     )
 
+    # shuffle the decks
+    deck_op = deck_pl
+    random.shuffle(deck_op["cards"])
+    random.shuffle(deck_pl["cards"])
+
     assert deck_pl is not None
 
     # pot
@@ -496,7 +501,7 @@ async def new_match():
                     "hp": 50000,
                     "hpmax": 5000,
                     "name": "BOT1",
-                    "deck": deck_pl,
+                    "deck": deck_op,
                     "hand": [],
                 },
                 identity: {
@@ -530,7 +535,7 @@ async def match_add_event(match_id: str):
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
     assert identity is not None
 
-    if e == "identity":
+    if e == "$me":
         e = identity
 
     assert identity == e

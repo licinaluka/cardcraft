@@ -70,7 +70,7 @@ async def hiccpage(page):
                             {
                                 method: 'POST',
                                 credentials: 'include',
-                                body: JSON.stringify({'event': ['identity', 'play', `h-${card_id}, ${e.target.parentNode.id}`]}),
+                                body: JSON.stringify({'event': ['$me', `player plays card ${card_id} to field position ${e.target.parentNode.id}`, null]}),
                                 headers: {'Content-Type': 'application/json'}
                             }
                         )

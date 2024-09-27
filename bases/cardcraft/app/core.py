@@ -6,6 +6,7 @@ import multiprocessing
 import os
 import random
 import signal
+import sys
 import time
 import typing as T
 import uuid
@@ -21,7 +22,7 @@ from cardcraft.app.controllers.cards import card, controller as cards
 from cardcraft.app.controllers.decks import controller as decks
 from cardcraft.app.controllers.matches import controller as matches
 from cardcraft.app.services.db import gamedb
-from cardcraft.app.services.match import loop
+from cardcraft.app.services.engine import loop
 from cardcraft.app.services.mem import mem
 from cardcraft.app.views.base import hiccpage, trident
 from cardcraft.app.views.navigation import menu
@@ -35,7 +36,14 @@ app.register_blueprint(matches)
 lock = multiprocessing.Lock()
 p = multiprocessing.Process(target=loop, args=(lock,))
 p.start()
-signal.signal(signal.SIGINT, lambda *a: p.join())
+
+def reloaded(*a):
+    p.terminate()
+    p.join()
+    sys.exit()
+
+
+signal.signal(signal.SIGINT, reloaded)
 
 # @app.errorhandler(Exception)
 def exceptions(err):

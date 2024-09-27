@@ -1,31 +1,12 @@
-import asyncio
 import functools
 import logging
-import multiprocessing
 import random
-import time
 import typing as T
 
 from bson import ObjectId
 from enum import Enum
-from cardcraft.app.services.db import gamedb
 from cardcraft.app.services.mem import mem
 
-
-def loop(lock: multiprocessing.Lock):
-    async def game():
-        with lock:
-            while True:        
-                async for match in gamedb.matches.find({}):
-                    state = Match.create(match)
-                    state.move()
-                    then = state._asdict()
-                    await gamedb.matches.replace_one({"id": then["id"]}, then)
-                    await asyncio.sleep(5)
-                    
-                time.sleep(5)
-
-    asyncio.run(game())
 
 
 class Event(T.NamedTuple):
@@ -84,37 +65,6 @@ class Match(T.NamedTuple):
 
         return getattr(self, method)(ttype, t)
 
-    def move(self) -> bool:
-        turn_idx, event_idx = self.cursor
-        if turn_idx >= len(self.turns):
-            return False
-
-        for event in self.turns[turn_idx][event_idx:]:
-            entity, fn, args = event
-
-            if not hasattr(self, fn):
-                logging.warning(f"not implemented - {fn}")
-                del self.turns[turn_idx][event_idx]
-                continue
-
-            if hasattr(self, f"_can_{fn}") and not getattr(self, f"_can_{fn}"):
-                logging.warning(f"failed attempt to {fn}")
-                del self.turns[turn_idx][event_idx]
-                continue
-
-            print({"EXEC": [fn, entity, args]})
-            if args is not None:
-                args = map(str.strip, str(args).split(","))
-
-            if args is not None:
-                getattr(self, fn)(entity, *args)
-            else:
-                getattr(self, fn)(entity)
-
-            self.cursor[1] = 0 if fn == "end_turn" else event_idx + 1
-
-        return True
-
     def end_turn(self, player: str):
         self.cursor[0] += 1
         self.cursor[1] = 0
@@ -143,26 +93,13 @@ class Match(T.NamedTuple):
     def draw(self, player: str, num: str):
         n = int(num)
         while n > 0:
+            print(f"DRAWING {n} CARDS")
             n -= 1
             if 1 > len(self.players[player]["deck"]["cards"]):
                 break
 
             card_id = self.players[player]["deck"]["cards"].pop()
             self.players[player]["hand"].append(card_id)
-
-    def play(self, player: str, _from: str, _to: str):
-        origin, card_id = _from.split("-")
-        target, *_to = _to.split("-")
-
-        hand_to_field = origin == "h" and target == "f"
-
-        if hand_to_field:
-            self.players[player]["hand"].pop(
-                self.players[player]["hand"].index(card_id)
-            )
-
-            *path, tail = map(int, _to)
-            functools.reduce(lambda a, e: a[e], path, self.fields)[tail] = card_id
 
     def v1_barrage(
         self,
@@ -188,35 +125,3 @@ class Match(T.NamedTuple):
         self.do(played_by, "life", (-1 * (pl_perc * int(card[pl_dmg_key]))))
 
 
-class Nemesis:
-    name: str
-
-    def __init__(self, name: str):
-        self.name = name
-
-    def do(self, match: Match) -> bool:
-        """do something"""
-
-        if not match.get("is_turn", Target.Player, self.name):
-            logging.warning("not my turn...")
-            return False
-
-        options: list = []
-        for action, args in {
-            "draw": "3",
-            # "play": random.choice(match.players[self.name]["hand"]),
-        }.items():
-            if match.get(f"can_{action}", Target.Player, self.name):
-                options.append([self.name, action, args])
-
-        # time.sleep(random.randint(1, 3))
-        if 0 < len(options):
-            match.do(*random.choice(options))
-
-            # end turn
-            match.do(self.name, "end_turn", None)
-            return True
-
-        # skip turn
-        match.do(self.name, "end_turn", None)
-        return False
