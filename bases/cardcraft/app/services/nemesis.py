@@ -1,5 +1,6 @@
 import logging
 import random
+import time
 import typing as T
 
 from cardcraft.app.services.match import Match, Target
@@ -25,7 +26,7 @@ class Nemesis:
                to the latest event in the turn
         """
         positions: list[list[str]] = [
-            [f"f-{i}-{j}" for j in range(0, 3)] for i in range(0, 3)
+            [f"f-{i}-{j}" for j, spot in enumerate(field) if spot is None] for i, field in enumerate(match.fields) if i < 3
         ]
         responses = match.responses.get(self.name, [])
 
@@ -50,7 +51,7 @@ class Nemesis:
         ]:
             options.append([self.name, event, None])
 
-        # time.sleep(random.randint(1, 3))
+        time.sleep(random.randint(1, 7))
         if 0 < len(options):
             match.do(*random.choice(options))
 

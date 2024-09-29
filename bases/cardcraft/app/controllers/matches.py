@@ -147,7 +147,7 @@ async def show_match(match_id: str):
                             "class": "btn purple game-refresh-trigger",
                             "hx-get": f"/web/part/game/matches/{match_id}",
                             "hx-target": ".tertiary",
-                            "hx-trigger": "every 5s",
+                            "hx-trigger": "every 9s",
                         },
                         "Refresh",
                     ],
@@ -214,7 +214,7 @@ async def show_match(match_id: str):
                                 ["p", "BAT"],
                                 [
                                     "div",
-                                    {"id": f"f-999-999"},
+                                    {"id": f"unit-bot1"},
                                     [
                                         "div",
                                         {
@@ -225,7 +225,7 @@ async def show_match(match_id: str):
                                         },
                                         card(
                                             {
-                                                "id": "card-bot1",
+                                                "id": "something",
                                                 "A_value": op["name"],
                                                 "C_value": "elemental-interception.jpeg",
                                                 "D_value": "Pro card player, trained specifically to challenge you",
@@ -563,6 +563,7 @@ async def new_match():
             },
             "responses": {},
             "opener": opener,
+            "winner": None,
             "created": int(time.time()),
             "finished": None,
             "cursor": [0, 0],

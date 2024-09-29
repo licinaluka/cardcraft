@@ -411,7 +411,7 @@ img {
   border-radius: 50%;
   width: 50px;
   height: 50px;
-  animation: spin 4s linear;
+  animation: spin 8s linear;
 }
                                                                       
 #loading.htmx-request, #loading.shown {

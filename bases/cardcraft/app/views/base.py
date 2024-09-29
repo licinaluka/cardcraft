@@ -89,21 +89,21 @@ async def hiccpage(page):
                         let el = document.querySelector('#' + id)
                         let hasCardAlready = 0 < e.target.querySelectorAll('.card-render').length
                         let row = (1 * e.target.parentNode.id.split('-')[1])
-                        let isOpponentCard = row == 999 || row < 3
+                        let isOpponentCard = row < 3 || e.target.parentNode.id.includes("unit-")
                         
                         let event = `player plays card ${card_id} to field position ${e.target.parentNode.id}`
 
                         if (hasCardAlready) {
-                            let friends = Array.from(e.target.querySelectorAll('.card-render')).map(e=>e.id.replace('card-', ''))
-                            if (0 < friends.length) {
-                                event = `player uses ${card_id} to buff ${friends.join(', ')}`
+                            let target = e.target.parentNode.id
+                            if (target) {
+                                event = `player uses ${card_id} to buff ${target}`
                             }
                         }
 
                         if (hasCardAlready && isOpponentCard) {
-                            let enemies = Array.from(e.target.querySelectorAll('.card-render')).map(e=>e.id.replace('card-', ''))
-                            if (0 < enemies.length) {
-                                event = `player uses ${card_id} to attack ${enemies.join(', ')}`
+                            let target = e.target.parentNode.id
+                            if (target) {
+                                event = `player uses ${card_id} to attack ${target}`
                             }
                         }
 

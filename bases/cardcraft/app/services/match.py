@@ -1,6 +1,7 @@
 import functools
 import logging
 import random
+import time
 import typing as T
 
 from bson import ObjectId
@@ -37,6 +38,9 @@ class Match(T.NamedTuple):
     # when the match was finished
     finished: T.Optional[int]
 
+    # match winner
+    winner: T.Optional[str] = None
+
     # reserved events for future turns
     futures: dict[list[Event]] = {}
 
@@ -68,10 +72,15 @@ class Match(T.NamedTuple):
 
         return getattr(self, method)(ttype, t)
 
+    def end(self) -> 'Match':
+        if any(filter(lambda e: e["hp"] <= 0, self.players.values())):
+            winner = next(filter(lambda e: e["hp"] > 0, self.players.values()), None)
+            assert winner is not None
+            
+            return self._replace(winner=winner["name"], finished=int(time.time()))
+
     def end_turn(self, player: str):
         print(f"{player} ENDS TURN {self.cursor}")
-        self.cursor[0] += 1
-        self.cursor[1] = 0
         self.turns.append([])
 
     def _can_draw(self, ttype: Target, t: T.Any) -> bool:
