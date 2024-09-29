@@ -53,7 +53,7 @@ async def show_deck(deck_id: str):
     assert sess_id is not None
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
-    assert identity is not None    
+    assert identity is not None
 
     deck: dict = await gamedb.decks.find_one({"id": deck_id, "owner": identity})
     used: list = await gamedb.cards.find({"id": {"$in": deck["cards"]}}).to_list()
@@ -77,7 +77,7 @@ async def show_deck(deck_id: str):
             [
                 "div",
                 {
-                    "style": "display:flex;flex-direction:row;justify-content:space-evenly;",
+                    "style": "display:flex;flex-direction:row;justify-content:space-between;",
                 },
                 [
                     [
@@ -85,6 +85,7 @@ async def show_deck(deck_id: str):
                         {
                             "hx-put": f"/web/part/game/decks/{deck_id}",
                             "hx-target": ".tertiary",
+                            "style": "flex-grow: 1; height: 90vh; overflow-y: scroll; margin: 1em; padding: 1em;",
                         },
                         [
                             [
@@ -97,16 +98,19 @@ async def show_deck(deck_id: str):
                                 },
                             ],
                             ["input", {"type": "submit"}],
+                            ["hr"],
                             [
                                 "div",
                                 [
                                     [
                                         "div",
                                         {
-                                            "class": "deck-view",
+                                            "class": "deck-view spot",
                                             "style": "overflow-y:scroll;",
                                             "ondrop": "drop(event)",
                                             "ondragover": "allowDrop(event)",
+                                            "onclick": "move(event)",
+                                            "style": "background: #111; padding-bottom: 5em;",
                                         },
                                         [["p", "deck view:"], used_view],
                                     ]
@@ -117,10 +121,12 @@ async def show_deck(deck_id: str):
                     [
                         "div",
                         {
-                            "class": "cards-view",
+                            "class": "cards-view spot",
                             "style": "overflow-y:scroll;",
                             "ondrop": "drop(event)",
                             "ondragover": "allowDrop(event)",
+                            "onclick": "move(event)",
+                            "style": "background: #111; padding-bottom: 5em; flex-grow: 1; height: 90vh; overflow-y: scroll; margin: 1em; padding: 1em;",
                         },
                         [
                             ["p", "available cards:"],
@@ -203,10 +209,11 @@ async def new_deck():
                                     [
                                         "div",
                                         {
-                                            "class": "deck-view",
+                                            "class": "deck-view spot",
                                             "style": "overflow-y:scroll;",
                                             "ondrop": "drop(event)",
                                             "ondragover": "allowDrop(event)",
+                                            "onclick": "move(event)",
                                         },
                                         [["p", "deck view:"]],
                                     ]
@@ -217,10 +224,11 @@ async def new_deck():
                     [
                         "div",
                         {
-                            "class": "cards-view",
+                            "class": "cards-view spot",
                             "style": "overflow-y:scroll;",
                             "ondrop": "drop(event)",
                             "ondragover": "allowDrop(event)",
+                            "onclick": "move(event)",
                         },
                         [
                             ["p", "available cards:"],

@@ -122,7 +122,9 @@ async def show_match(match_id: str):
         {"id": {"$in": game.players[identity]["hand"]}}
     ).to_list()
 
-    ophand = await gamedb.cards.find({"id": {"$in": game.players[opkey]["hand"]}}).to_list()
+    ophand = await gamedb.cards.find(
+        {"id": {"$in": game.players[opkey]["hand"]}}
+    ).to_list()
 
     fields = {
         e["id"]: e
@@ -136,15 +138,16 @@ async def show_match(match_id: str):
         [
             [
                 "div",
-                {"class": "game"},
+                {"class": "game", "id": "game"},
                 [
+                    ["div", {"id": "loading", "class": "shown"}, " "],
                     [
                         "a",
                         {
                             "class": "btn purple game-refresh-trigger",
                             "hx-get": f"/web/part/game/matches/{match_id}",
                             "hx-target": ".tertiary",
-                            "hx-trigger": "every 5s",
+                            # "hx-trigger": "every 5s",
                         },
                         "Refresh",
                     ],
@@ -173,8 +176,9 @@ async def show_match(match_id: str):
                             # "hx-target": "#match-pot",
                             # "hx-trigger": "load 2s"
                         },
-                        f"POT: {await show_match_pot_status(match_id)}"
+                        f"POT: {await show_match_pot_status(match_id)}",
                     ],
+                    ["p", str(game.get("can_respond", Target.Player, identity))],
                     [
                         "div",
                         {"class": "board"},
@@ -187,13 +191,17 @@ async def show_match(match_id: str):
                                     "div",
                                     {"class": "hand"},
                                     [
-                                        card(
-                                            {
-                                                "A_value": "?",
-                                                "D_value": "?",
-                                                "C_value": None,
-                                            }
-                                        )
+                                        [
+                                            "div",
+                                            {"class": "card-container"},
+                                            card(
+                                                {
+                                                    "A_value": "?",
+                                                    "D_value": "?",
+                                                    "C_value": None,
+                                                }
+                                            ),
+                                        ]
                                         for i, e in enumerate(ophand)
                                     ],
                                 ],
@@ -205,6 +213,27 @@ async def show_match(match_id: str):
                             [
                                 ["p", "BAT"],
                                 [
+                                    "div",
+                                    {"id": f"f-999-999"},
+                                    [
+                                        "div",
+                                        {
+                                            "class": "spot",
+                                            "ondrop": "drop(event)",
+                                            "ondragover": "allowDrop(event)",
+                                            "onclick": "move(event)",
+                                        },
+                                        card(
+                                            {
+                                                "id": "card-bot1",
+                                                "A_value": op["name"],
+                                                "C_value": "elemental-interception.jpeg",
+                                                "D_value": "Pro card player, trained specifically to challenge you",
+                                            }
+                                        ),
+                                    ],
+                                ],
+                                [
                                     [
                                         "div",
                                         {"class": "field"},
@@ -215,9 +244,19 @@ async def show_match(match_id: str):
                                                 [
                                                     "div",
                                                     {
-                                                        "class": "spot",
+                                                        "class": "spot"
+                                                        + (
+                                                            " grey darken-4"
+                                                            if (
+                                                                i
+                                                                < (len(game.fields) / 2)
+                                                                and j < (len(field))
+                                                            )
+                                                            else ""
+                                                        ),
                                                         "ondrop": "drop(event)",
                                                         "ondragover": "allowDrop(event)",
+                                                        "onclick": "move(event)",
                                                     },
                                                     (
                                                         card(fields[spot])
@@ -242,7 +281,11 @@ async def show_match(match_id: str):
                                     "div",
                                     {"class": "hand"},
                                     [
-                                        card(dict(e, handidx=i))
+                                        [
+                                            "div",
+                                            {"class": "card-container"},
+                                            card(dict(e, handidx=i)),
+                                        ]
                                         for i, e in enumerate(hand)
                                     ],
                                 ],
@@ -356,10 +399,10 @@ async def new_match_deck_selection():
                                     "hx-trigger": "change, keyup",
                                     "hx-target": "#pot-message",
                                     "hx-post": "/web/part/game/matches/new/pot-fee",
-                                    "hx-ext": "json-enc"
+                                    "hx-ext": "json-enc",
                                 },
                             ],
-                            ["span", {"id": "pot-message"}, " "],                            
+                            ["span", {"id": "pot-message"}, " "],
                         ],
                     ],
                     ["br"],
@@ -374,12 +417,17 @@ async def new_match_deck_selection():
                         "Add to pot",
                     ],
                     ["span", " | "],
-                    ["button", {"class": "btn purple lighten-1", "type": "submit"}, "Start"],
+                    [
+                        "button",
+                        {"class": "btn purple lighten-1", "type": "submit"},
+                        "Start",
+                    ],
                 ],
             ],
         ]
     )
-    
+
+
 @controller.route("/web/part/game/matches/new/pot-fee", methods=["POST"])
 async def new_match_pot_fee():
     amount: int = int(request.json.get("lamports") or 0)
@@ -389,13 +437,11 @@ async def new_match_pot_fee():
     return _convert_tree(
         [
             "span",
-            {
-                "id": "pot-message",
-                "class": "green-text" if is_ok else "red-text"
-            },
-            f"Minimum fees expected: {fee} Lamports"
+            {"id": "pot-message", "class": "green-text" if is_ok else "red-text"},
+            f"Minimum fees expected: {fee} Lamports",
         ]
     )
+
 
 @controller.route("/web/part/game/matches/<match_id>/pot-status", methods=["GET"])
 async def show_match_pot_status(match_id: str):
@@ -406,10 +452,12 @@ async def show_match_pot_status(match_id: str):
     for name in match["players"].keys():
         _: dict = match["players"][name]["pot"]
         if _["txsig"] is not None and _["lamports"] > 0:
-            total += pot.get_transaction_details(_["txsig"], commitment="confirmed").amount
+            total += pot.get_transaction_details(
+                _["txsig"], commitment="confirmed"
+            ).amount
 
     # return _convert_tree(["b", f"{total}"])
-    return total        
+    return total
 
 
 @controller.route("/web/part/game/matches/new", methods=["POST"])
@@ -494,25 +542,26 @@ async def new_match():
     await gamedb.matches.insert_one(
         {
             "id": battle_ref,
-            "fields": [[None for spot in range(0, 5)] for field in range(0, 4)],
+            "fields": [[None for spot in range(0, 3)] for field in range(0, 6)],
             "players": {
                 "bot1": {
                     "pot": {"lamports": derived, "txsig": None},
-                    "hp": 50000,
-                    "hpmax": 5000,
+                    "hp": 5_000,
+                    "hpmax": 5_000,
                     "name": "BOT1",
                     "deck": deck_op,
                     "hand": [],
                 },
                 identity: {
                     "pot": {"lamports": lamports, "txsig": txsig},
-                    "hp": 50000,
-                    "hpmax": 5000,
+                    "hp": 5_000,
+                    "hpmax": 5_000,
                     "name": sess_id,
                     "deck": deck_pl,
                     "hand": [],
                 },
             },
+            "responses": {},
             "opener": opener,
             "created": int(time.time()),
             "finished": None,

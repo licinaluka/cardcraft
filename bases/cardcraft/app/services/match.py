@@ -43,6 +43,9 @@ class Match(T.NamedTuple):
     # player data
     players: dict[str, dict] = {}
 
+    # player response options
+    responses: dict[str, dict] = {}
+
     # turn and event evaluated at the moment
     cursor: list[int] = [0, 0]
 
@@ -66,6 +69,7 @@ class Match(T.NamedTuple):
         return getattr(self, method)(ttype, t)
 
     def end_turn(self, player: str):
+        print(f"{player} ENDS TURN {self.cursor}")
         self.cursor[0] += 1
         self.cursor[1] = 0
         self.turns.append([])
@@ -81,7 +85,10 @@ class Match(T.NamedTuple):
         return False
 
     def _can_play(self, ttype: Target, t: T.Any) -> bool:
-        return False
+        return self._is_turn(ttype, t)
+
+    def _can_respond(self, ttype: Target, t: T.Any) -> bool:
+        return self.responses.get(t, None) is not None
 
     def _is_turn(self, ttype: Target, t: T.Any) -> bool:
         if ttype == Target.Player:
@@ -112,6 +119,11 @@ class Match(T.NamedTuple):
     ):
         """card can damage the opponent for N% and player for N% of card's stat
 
+        @param op_perc float
+        @param op_dmg_key str
+        @param pl_perc float
+        @param pl_dmg_key str
+
         @since 2024-09-22
         """
 
@@ -124,4 +136,22 @@ class Match(T.NamedTuple):
         self.do(target, "life", (-1 * (op_perc * int(card[op_dmg_key]))))
         self.do(played_by, "life", (-1 * (pl_perc * int(card[pl_dmg_key]))))
 
+    def v1_debuff(self, card_id: str, played_by: str, stat: T.Literal["atk", "def"], amt: int):
+        """card can debuff targeted enemy card for $AMT of $STAT
 
+        @param stat ark|def
+        @param amt int
+
+        @since ?
+        """
+        pass
+
+    def v1_debuff_attacking(self, card_id: str, played_by: str, stat: T.Literal["atk", "def"], amt: int):
+        """card can debuff targeted attacking enemy card for $AMT of $STAT
+
+        @param stat atk|def
+        @param amt int
+
+        @since ?
+        """
+        pass

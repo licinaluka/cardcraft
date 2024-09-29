@@ -104,7 +104,8 @@ class Purse {
         )
 
         if (this.btn) {
-            this.btn.innerHTML = `${this.identity()}`
+            let trunc: string = this.identity()?.toString().substring(0, 7)
+            this.btn.innerHTML = `${trunc}...`
         }
     }
 

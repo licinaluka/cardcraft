@@ -158,7 +158,16 @@ img {
 
 .game .board .hand {
   display: flex;
-  align-items: flex-end;
+}
+
+.game .board .hand .card-container {
+  width: 1px;
+  flex-grow: 1;
+}
+
+.game .board .hand .card-container:last-child {
+  width: 100px;
+  flex-grow: 0;
 }
 
 .game .board .field {
@@ -168,9 +177,30 @@ img {
 .game .board .spot {
   padding: 1em;
   margin: 1em;
-  min-width: 10em;
-  height: 20em;
+  width: 5em;
+  height: 10em;
   border: 1px solid #555;
+  overflow: auto;
+}
+
+.game .board .spot .card-render {
+  width: 5em;
+  height: 5em;
+  overflow: hidden;
+  padding: unset;
+  margin: unset;
+}
+
+.game .board .spot .card-render * {
+  visibility: hidden;
+  height: 0px;
+  margin: 0px;
+}
+
+.game .board .spot .card-render img {
+  visibility: visible;
+  width: 5em;
+  height: 5em;
 }
 
 .game .deck-back-render {
@@ -199,6 +229,10 @@ img {
   border: 2px solid gold;
 }
 
+.game .card-render.movable {
+  border: 2px dashed lightblue;
+}
+
 .game .opponent .card-render {
     display: block;
     background: url('/resources/app/img/card-back-ue-pirated.jpg');
@@ -214,9 +248,14 @@ img {
   object-fit: cover;
   object-position: center;
   height: 13em;
+  pointer-events: none;
 }
 
-.game .hand .card-render .c-contenx {
+.game .spot .card-render {
+  height: auto;
+}
+
+.game .spot .c-contentx {
   display: none;
 }
 
@@ -372,10 +411,10 @@ img {
   border-radius: 50%;
   width: 50px;
   height: 50px;
-  animation: spin 2s linear infinite;
+  animation: spin 4s linear;
 }
                                                                       
-#loading.htmx-request {
+#loading.htmx-request, #loading.shown {
   display: block !important;
 }
                                                                       

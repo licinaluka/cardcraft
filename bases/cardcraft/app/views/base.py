@@ -57,12 +57,56 @@ async def hiccpage(page):
                 ["script", "htmx.config.withCredentials=true"],
                 ["script", {"src": js("app/bundle.js"), "type": "module"}, " "],
                 ["script", """
+
+                    /** */
+                    async function move(e) {
+                        console.log(e.target.className)
+                        if (['card-render', 'c-title', 'c-image', 'c-content'].some(klass => e.target.className.includes(klass))) {
+                            return false;
+                        }
+
+                        for (let el of document.querySelectorAll('.movable')) {
+                            e.dataTransfer = new DataTransfer()
+                            e.dataTransfer.setData('text', el.id)
+                            el.classList.toggle('movable')
+                            await drop(e)
+                        }
+                    }
+
+                    /** */
                     async function drop(e) {
                         e.preventDefault()
+
+                        if (! e.target.className.includes('spot')) {
+                            let msg = 'Cards must be moved to "spots"!'
+                            alert(msg)
+                            throw msg
+                        }
+
                         let id = e.dataTransfer.getData('text')
                         let card_id = id.replace('card-', '')
 
                         let el = document.querySelector('#' + id)
+                        let hasCardAlready = 0 < e.target.querySelectorAll('.card-render').length
+                        let row = (1 * e.target.parentNode.id.split('-')[1])
+                        let isOpponentCard = row == 999 || row < 3
+                        
+                        let event = `player plays card ${card_id} to field position ${e.target.parentNode.id}`
+
+                        if (hasCardAlready) {
+                            let friends = Array.from(e.target.querySelectorAll('.card-render')).map(e=>e.id.replace('card-', ''))
+                            if (0 < friends.length) {
+                                event = `player uses ${card_id} to buff ${friends.join(', ')}`
+                            }
+                        }
+
+                        if (hasCardAlready && isOpponentCard) {
+                            let enemies = Array.from(e.target.querySelectorAll('.card-render')).map(e=>e.id.replace('card-', ''))
+                            if (0 < enemies.length) {
+                                event = `player uses ${card_id} to attack ${enemies.join(', ')}`
+                            }
+                        }
+
                         e.target.appendChild(el)
 
                         await fetch(
@@ -70,15 +114,46 @@ async def hiccpage(page):
                             {
                                 method: 'POST',
                                 credentials: 'include',
-                                body: JSON.stringify({'event': ['$me', `player plays card ${card_id} to field position ${e.target.parentNode.id}`, null]}),
+                                body: JSON.stringify({'event': ['$me', event, null]}),
                                 headers: {'Content-Type': 'application/json'}
                             }
                         )
                     }
 
+                    /** */
                     function allowDrop(e) {
                         e.preventDefault()
-                    }                
+                    }
+
+                    /** */
+                    document.onmousedown = (e) => {
+                        setTimeout(() => {
+                            if (! ['card-render', 'c-title', 'c-image', 'c-content'].some(klass => e.target.className.includes(klass))) {
+                                return
+                            }
+
+                            if (window.holding) {
+                                let card = e.target.closest('.card-render').cloneNode(true)
+                                card.id = 'popup-card'
+                                card.style.position = 'fixed';
+                                card.style.top = '2em'
+                                card.style.right = '2em'
+                                document.querySelector('.game').append(card)
+                            }
+
+                            window.holding = e.target.closest('.card-render')
+                        }, 1000)
+                    }
+
+                    /** */
+                    document.onmouseup = (e) => {
+                        window.holding = null
+                        let card = document.querySelector('#popup-card')
+
+                        if (card) {
+                            card.parentNode.removeChild(card)
+                        }
+                    }
                 """]
             ],
         ],

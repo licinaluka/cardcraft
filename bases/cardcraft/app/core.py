@@ -104,6 +104,16 @@ async def authn():
     resp.code = 204
     return resp
 
+@app.route("/api/part/game/authn/logout", methods=["GET"])
+async def logout():
+    return Response(
+        status=303,
+        headers={
+            "Set-Cookie": f"ccraft_sess=nil;path=/;max-age=1",
+            "Location": "/"
+        }
+    )
+
 
 @app.route("/api/part/game/authn/challenge", methods=["POST"])
 async def challenge():

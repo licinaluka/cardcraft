@@ -7,9 +7,9 @@ from cardcraft.app.services.mem import mem
 def menu():
     return ["div",
       ["ul", [
-        ["li", ["a", {}, "Games"]],
-        ["li", ["a", {"href": "/decks"}, "Decks"]],
-        ["li", ["a", {"href": "/cards"}, "Cards"]]]]]
+        ["li", ["a", {}, "MATCHES"]],
+        ["li", ["a", {"href": "/decks"}, "DECKS"]],
+        ["li", ["a", {"href": "/cards"}, "CARDS"]]]]]
 
 
 
@@ -23,6 +23,11 @@ async def navigation():
 
     authenticated: bool = sess_id is not None and sess_id in mem["session"]
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
+    
+    trunc: T.Optional[str]  = None
+    
+    if identity is not None:
+        trunc = identity[0:7] + "..."
 
     sign_in = [
         "a",
@@ -30,7 +35,7 @@ async def navigation():
             "id": "connection",
             "onclick": "window.purse.connect()",
         },
-        identity or "connect o/"
+        trunc or "connect o/"
     ]
 
     return [
@@ -44,17 +49,12 @@ async def navigation():
                 ["i", {"class": "material-icons insert_chart"}, " "],
             ],
             ["li", ["a", {"onclick": "document.querySelector('#menu').style.display = document.querySelector('#menu').style.display == 'block' ? 'none': 'block'", "style":"transform: rotate(90deg);"}, "|||"]],
-            ["li", ["a", {"href": "/"}, "home"]],
-            # ["li", ["a", {
-            #     "hx-post": "/web/part/game/match/new",
-            #     "hx-target": ".tertiary",
-            #     "hx-swap": "innerHTML",
-            #     "class": "btn purple"
-            # }, "New game"]],
+            ["li", ["a", {"href": "/"}, "HOME"]],
+            (["li", ["a", {"href": "/api/part/game/authn/logout"}, "LOGOUT"]] if authenticated else ""),
             [
                 "li",
                 {"class": "right"},
-                sign_in if not authenticated else ["a", identity]
+                sign_in if not authenticated else ["a", trunc]
             ],
         ],
     ]
