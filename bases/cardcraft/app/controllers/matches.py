@@ -126,12 +126,12 @@ async def show_match(match_id: str):
         {"id": {"$in": game.players[opkey]["hand"]}}
     ).to_list()
 
-    fields = {
-        e["id"]: e
-        for e in await gamedb.cards.find(
-            {"id": {"$in": [e for f in game.fields for e in f if e is not None]}}
-        ).to_list()
-    }
+    # fields = {
+    #     e["id"]: e
+    #     for e in await gamedb.cards.find(
+    #         {"id": {"$in": [e for f in game.fields for e in f if e is not None]}}
+    #     ).to_list()
+    # }
 
     resp = Response()
     resp.response = _convert_tree(
@@ -147,7 +147,7 @@ async def show_match(match_id: str):
                             "class": "btn purple game-refresh-trigger",
                             "hx-get": f"/web/part/game/matches/{match_id}",
                             "hx-target": ".tertiary",
-                            # "hx-trigger": "every 5s",
+                            "hx-trigger": "every 5s",
                         },
                         "Refresh",
                     ],
@@ -259,7 +259,7 @@ async def show_match(match_id: str):
                                                         "onclick": "move(event)",
                                                     },
                                                     (
-                                                        card(fields[spot])
+                                                        card(game.fields[i][j])
                                                         if spot is not None
                                                         else " "
                                                     ),
