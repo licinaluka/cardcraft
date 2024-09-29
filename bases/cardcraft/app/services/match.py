@@ -80,7 +80,6 @@ class Match(T.NamedTuple):
             return self._replace(winner=winner["name"], finished=int(time.time()))
 
     def end_turn(self, player: str):
-        print(f"{player} ENDS TURN {self.cursor}")
         self.turns.append([])
 
     def _can_draw(self, ttype: Target, t: T.Any) -> bool:
@@ -109,7 +108,6 @@ class Match(T.NamedTuple):
     def draw(self, player: str, num: str):
         n = int(num)
         while n > 0:
-            print(f"DRAWING {n} CARDS")
             n -= 1
             if 1 > len(self.players[player]["deck"]["cards"]):
                 break
