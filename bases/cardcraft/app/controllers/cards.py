@@ -5,7 +5,7 @@ from flask import Blueprint, request
 from pyhiccup.core import html
 
 from cardcraft.app.services.db import gamedb
-from cardcraft.app.services.match import Match
+from cardcraft.app.services.game import Match
 from cardcraft.app.views.base import hiccpage, trident
 from cardcraft.app.views.navigation import menu, navigation
 
