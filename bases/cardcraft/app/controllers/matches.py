@@ -15,6 +15,7 @@ from cardcraft.app.services.match import Match, Target
 from cardcraft.app.services.nemesis import Nemesis
 from cardcraft.app.services.mem import mem
 from cardcraft.app.services.pot import pot
+from cardcraft.app.views.matches import listed, shown
 
 controller = Blueprint("matches", __name__)
 
@@ -28,64 +29,11 @@ async def list_matches():
     if identity is None:
         return _convert_tree(["p", "Not authenticated"])
 
-    no_matches = [
-        "div",
-        {"class": "blank"},
-        [
-            [
-                "div",
-                {"style": "color: #888; cursor: default; user-select: none"},
-                "No previous matches!",
-            ],
-        ],
-    ]
-
     matches = await gamedb.matches.find(
         {f"players.{identity}": {"$exists": True}}
     ).to_list()
 
-    return _convert_tree(
-        [
-            "div",
-            [
-                [
-                    "a",
-                    {
-                        "hx-post": "/web/part/game/matches/new/decks",
-                        "hx-target": ".tertiary",
-                        "hx-swap": "innerHTML",
-                        "class": "btn purple",
-                    },
-                    " Start a match!",
-                ],
-                [
-                    "div",
-                    {"class": "collection black"},
-                    [
-                        [
-                            "a",
-                            {
-                                "hx-get": f"/web/part/game/matches/{e['id']}",
-                                "hx-target": ".tertiary",
-                                "class": "collection-item avatar",
-                            },
-                            [
-                                "img",
-                                {
-                                    "src": f"/resources/app/img/card-back-ue-pirated.jpg",
-                                    "class": "circle",
-                                },
-                            ],
-                            ["span", {"class": "title"}, e["id"]],
-                            # ["p", e["D_value"]],
-                        ]
-                        for e in matches
-                    ]
-                    or no_matches,
-                ],
-            ],
-        ]
-    )
+    return _convert_tree(listed(matches))
 
 
 @controller.route("/web/part/game/matches/<match_id>", methods=["GET"])
