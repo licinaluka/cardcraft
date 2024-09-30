@@ -53,7 +53,8 @@ class Nemesis:
 
         time.sleep(random.randint(1, 7))
         if 0 < len(options):
-            match.do(*random.choice(options))
+            chose = random.choice(options)
+            match.do(*chose)
 
             # end turn
             match.do(self.name, "end_turn", None)

@@ -74,10 +74,15 @@ class Match(T.NamedTuple):
 
     def end(self) -> 'Match':
         if any(filter(lambda e: e["hp"] <= 0, self.players.values())):
-            winner = next(filter(lambda e: e["hp"] > 0, self.players.values()), None)
+            winner: T.Optional[str] = None
+            for k, v in self.players.items():
+                if v["hp"] > 0:
+                    winner = k
+                    break
+
             assert winner is not None
             
-            return self._replace(winner=winner["name"], finished=int(time.time()))
+            return self._replace(winner=winner, finished=int(time.time()))
 
     def end_turn(self, player: str):
         self.turns.append([])

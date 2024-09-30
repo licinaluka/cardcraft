@@ -103,7 +103,6 @@ async def show_match(match_id: str):
     lookup = {
         "id": match_id,
         f"players.{identity}": {"$exists": True},
-        "finished": None,
     }
     match = await gamedb.matches.find_one(lookup)
     assert match is not None
@@ -147,7 +146,7 @@ async def show_match(match_id: str):
                             "class": "btn purple game-refresh-trigger",
                             "hx-get": f"/web/part/game/matches/{match_id}",
                             "hx-target": ".tertiary",
-                            "hx-trigger": "every 9s",
+                            "hx-trigger": "click, every 9s",
                         },
                         "Refresh",
                     ],
@@ -165,20 +164,13 @@ async def show_match(match_id: str):
                             "hx-swap": "none",
                         },
                         "End turn",
-                    ],
+                    ] if game.get('is_turn', Target.Player, identity) else (["small", "Opponent turn"] if game.winner is None else ["small", f"{game.winner} WON"]),
                     ["span", " | "],
                     [
-                        "div",
-                        {
-                            "id": "match-pot",
-                            "class": "btn black",
-                            # "hx-get": f"/web/part/game/matches/{match_id}/pot-status",
-                            # "hx-target": "#match-pot",
-                            # "hx-trigger": "load 2s"
-                        },
-                        f"POT: {await show_match_pot_status(match_id)}",
+                        "p", {"class": "btn grey"},
+                        await show_match_pot_status(match_id),
                     ],
-                    ["p", str(game.get("can_respond", Target.Player, identity))],
+                    ["p", {"class": "btn blue lighten-2"}, "PASS"] if game.get("can_respond", Target.Player, identity) else ["small", "/"],
                     [
                         "div",
                         {"class": "board"},
@@ -443,8 +435,12 @@ async def new_match_pot_fee():
     )
 
 
-@controller.route("/web/part/game/matches/<match_id>/pot-status", methods=["GET"])
+# @controller.route("/web/part/game/matches/<match_id>/pot-status", methods=["GET"])
 async def show_match_pot_status(match_id: str):
+    """checks pot status, pays winner, if any
+
+    @todo move match win payout elsewhere
+    """
     match: dict = await gamedb.matches.find_one({"id": match_id})
 
     total: int = 0
@@ -456,8 +452,11 @@ async def show_match_pot_status(match_id: str):
                 _["txsig"], commitment="confirmed"
             ).amount
 
-    # return _convert_tree(["b", f"{total}"])
-    return total
+    if match["winner"] is not None:
+        trunc: str = match["winner"][0:7]
+        return f"PAID: {trunc}... AMOUNT: {total}"
+
+    return f"POT: {total}"
 
 
 @controller.route("/web/part/game/matches/new", methods=["POST"])
