@@ -4,6 +4,7 @@ import math
 import os
 import random
 import time
+import uuid
 
 from flask import Blueprint, Response, redirect, request
 from pyhiccup.core import _convert_tree, html
@@ -271,7 +272,6 @@ async def show_match(match_id: str):
 
     return resp
 
-
 @controller.route("/web/part/game/matches/new/decks", methods=["POST"])
 async def new_match_deck_selection():
     sess_id: T.Optional[str] = request.cookies.get("ccraft_sess")
@@ -291,6 +291,9 @@ async def new_match_deck_selection():
     if 0 < len(decks):
         # player has no decks, use a pre-defined starter deck
         pass
+
+    match_secret = str(uuid.uuid4())
+    mem["csrf"][match_secret] = int(time.time())
 
     return _convert_tree(
         [
@@ -322,6 +325,7 @@ async def new_match_deck_selection():
                             for deck in decks
                         ],
                     ],
+                    ["input", {"type": "hidden", "name": "csrf", "value": match_secret}],
                     ["small", {"class": "red-text"}, "*Required"],
                     ["br"],
                     [
@@ -352,7 +356,7 @@ async def new_match_deck_selection():
                         "a",
                         {
                             "class": "btn purple darken-1",
-                            "onclick": f"window.purse.pot('{pot.sys.pubkey()}', document.querySelector('#pot-lamports').value)",
+                            "onclick": f"window.purse.pot('{pot.get_match_wallet(mem['csrf'][match_secret]).pubkey()}', document.querySelector('#pot-lamports').value)",
                         },
                         "Add to pot",
                     ],
@@ -395,14 +399,20 @@ async def show_match_pot_status(match_id: str):
 
     for name in match["players"].keys():
         _: dict = match["players"][name]["pot"]
-        if _["txsig"] is not None and _["lamports"] > 0:
-            total += pot.get_transaction_details(
-                _["txsig"], commitment="confirmed"
-            ).amount
+        if _["lamports"] > 0:
+            if name in ["bot1", "bot2", "bot3"]: # ... etc, @todo manage bots
+                total += _["lamports"]
+                continue
+
+            if _["txsig"] is not None:
+                total += pot.get_transaction_details(
+                    _["txsig"], commitment="confirmed"
+                ).amount
 
     if match["winner"] is not None:
         trunc: str = match["winner"][0:7]
-        return f"PAID: {trunc}... AMOUNT: {total}"
+        paidsig: str = pot.pay_match_balance(match)
+        return f"PAID: {trunc}... AMOUNT: {total}, SIG: {paidsig}"
 
     return f"POT: {total}"
 
@@ -414,6 +424,14 @@ async def new_match():
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
     assert identity is not None
+
+    # csrf token
+    match_secret = request.form.get("csrf")
+    assert match_secret is not None
+
+    # match creation timestamp
+    created: int = mem["csrf"][match_secret]
+    assert created is not None
 
     # deck selection
     deck_id: str = request.form.get("deck_id")
@@ -429,7 +447,6 @@ async def new_match():
     assert deck_pl is not None
 
     # pot
-    pot: bool = request.form.get("pot") or False
     lamports: int = 0 if not pot else int(request.form.get("lamports") or 0)
     txsig: T.Optional[str] = request.form.get("txsig") or None
 
@@ -456,7 +473,7 @@ async def new_match():
     lookup = {"players.bot1": {"$exists": True}, "player.bot1.txsig": {"$ne": None}}
 
     prev: list[dict] = (
-        await gamedb.matches.find(lookup).sort({"started": -1}).limit(1).to_list()
+        await gamedb.matches.find(lookup).sort({"created": 1}).limit(1).to_list()
     )
     prev_pot: dict = next(iter(prev), {})
 
@@ -511,7 +528,7 @@ async def new_match():
             "responses": {},
             "opener": opener,
             "winner": None,
-            "created": int(time.time()),
+            "created": created,
             "finished": None,
             "cursor": [0, 0],
             "turns": [[[opener, "draw", 3], [second, "draw", 3]]],  # turn 1  # turn 2

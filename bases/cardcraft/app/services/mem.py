@@ -1,5 +1,6 @@
 mem: dict = {
     "session": {},
     "cid": 1,
-    "matches": {}
+    "matches": {},
+    "csrf": {},
 }
