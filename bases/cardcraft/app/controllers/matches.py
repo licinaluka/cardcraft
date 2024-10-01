@@ -411,8 +411,18 @@ async def show_match_pot_status(match_id: str):
 
     if match["winner"] is not None:
         trunc: str = match["winner"][0:7]
-        paidsig: str = pot.pay_match_balance(match)
-        return f"PAID: {trunc}... AMOUNT: {total}, SIG: {paidsig}"
+        paid: bool = await gamedb.matches.find_one({
+            "id": match_id, 
+            f"players.{match['winner']}.pot.payoutsig": {"$exists": False}
+        }) is None
+
+        if paid:
+            return f"PAID: {trunc}, AMOUNT: {total}"
+
+        payoutsig: str = pot.pay_match_balance(match)
+        
+        await gamedb.matches.update_one({"id": match_id}, {"$set": {f"players.{match['winner']}.pot.payoutsig": payoutsig}})
+        return f"PAID: {trunc}, AMOUNT: {total}, SIG: {payoutsig}"
 
     return f"POT: {total}"
 
