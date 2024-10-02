@@ -1,7 +1,9 @@
 import os
+import typing as T
 
 from flask import Blueprint, redirect, request
 from pyhiccup.core import _convert_tree, html
+from werkzeug.datastructures.structures import ImmutableMultiDict
 
 from cardcraft.app.controllers.cards import card
 from cardcraft.app.views.base import hiccpage, trident
@@ -14,7 +16,7 @@ controller = Blueprint("decks", __name__)
 
 @controller.route("/decks", methods=["GET"])
 async def list_decks():
-    sess_id: str = request.cookies.get("ccraft_sess")
+    sess_id: T.Optional[str] = request.cookies.get("ccraft_sess", None)
     assert sess_id is not None
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
@@ -49,14 +51,19 @@ async def list_decks():
 
 @controller.route("/web/part/game/decks/<deck_id>", methods=["GET"])
 async def show_deck(deck_id: str):
-    sess_id: str = request.cookies.get("ccraft_sess")
+    sess_id: T.Optional[str] = request.cookies.get("ccraft_sess", None)
     assert sess_id is not None
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
     assert identity is not None
 
-    deck: dict = await gamedb.decks.find_one({"id": deck_id, "owner": identity})
+    deck: T.Optional[dict] = await gamedb.decks.find_one({"id": deck_id, "owner": identity})
+
+    if deck is None:
+        raise Exception('Deck not found!')
+
     used: list = await gamedb.cards.find({"id": {"$in": deck["cards"]}}).to_list()
+
     used_ids: list = list(map(lambda e: e["id"], used))
     used_view: list = [card(e) for e in used] or ["p", "Put cards here"]
 
@@ -141,14 +148,22 @@ async def show_deck(deck_id: str):
 
 @controller.route("/web/part/game/decks/new", methods=["POST"])
 async def store_deck():
-    sess_id: str = request.cookies.get("ccraft_sess")
+    sess_id: T.Optional[str] = request.cookies.get("ccraft_sess", None)
     assert sess_id is not None
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
     assert identity is not None
 
-    name: str = request.form.get("name")
-    cards: dict = request.form.getlist("card")
+    form: ImmutableMultiDict[str, str] = request.form
+    if form is None:
+        raise Exception('Form not sent!')
+
+    name: T.Optional[str] = form.get("name")
+
+    if name is None:
+        raise Exception('Name is missing!')
+
+    cards: list[str] = form.getlist("card")
 
     await gamedb.decks.insert_one(
         {"id": os.urandom(16).hex(), "name": name, "cards": cards, "owner": identity}
@@ -159,14 +174,26 @@ async def store_deck():
 
 @controller.route("/web/part/game/decks/<deck_id>", methods=["PUT"])
 async def update_deck(deck_id: str):
-    sess_id: str = request.cookies.get("ccraft_sess")
+    sess_id: T.Optional[str] = request.cookies.get("ccraft_sess", None)
     assert sess_id is not None
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
     assert identity is not None
 
-    name: str = request.form.get("name")
-    cards: list[str] = request.form.getlist("card")
+    form: ImmutableMultiDict[str, str] = request.form
+
+    if form is None:
+        raise Exception('Form not sent!')
+
+    name: T.Optional[str] = form.get("name")
+
+    if name is None:
+        raise Exception('Name is missing!')
+
+    cards: T.Optional[list[str]] = form.getlist("card")
+
+    if cards is None:
+        raise Exception('Cards are missing!')
 
     await gamedb.decks.update_one(
         {"id": deck_id}, {"$set": {"name": name, "cards": cards, "owner": identity}}

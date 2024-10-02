@@ -54,7 +54,7 @@ async def navigation():
             [
                 "li",
                 {"class": "right"},
-                sign_in if not authenticated else ["a", trunc]
+                sign_in if not authenticated else ["a", trunc] # type: ignore[list-item]
             ],
         ],
     ]

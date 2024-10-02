@@ -27,7 +27,7 @@ class Match(T.NamedTuple):
     id: str
 
     # play area(s)
-    fields: list[list[T.Optional[str]]]
+    fields: list[list[T.Optional[dict]]]
 
     # player with first turn
     opener: str
@@ -42,13 +42,13 @@ class Match(T.NamedTuple):
     winner: T.Optional[str] = None
 
     # reserved events for future turns
-    futures: dict[list[Event]] = {}
+    futures: dict[str, list[Event]] = {}
 
     # player data
     players: dict[str, dict] = {}
 
     # player response options
-    responses: dict[str, dict] = {}
+    responses: dict[str, list[str]] = {}
 
     # turn and event evaluated at the moment
     cursor: list[int] = [0, 0]
@@ -72,24 +72,32 @@ class Match(T.NamedTuple):
 
         return getattr(self, method)(ttype, t)
 
-    def end(self) -> 'Match':
-        if any(filter(lambda e: e["hp"] <= 0, self.players.values())):
-            winner: T.Optional[str] = None
-            for k, v in self.players.items():
-                if v["hp"] > 0:
-                    winner = k
-                    break
+    def end(self) -> T.Optional['Match']:
+        def was_defeated(e: dict) -> bool:
+            return e["hp"] <= 0
 
-            assert winner is not None
-            
-            return self._replace(winner=winner, finished=int(time.time()))
+        if not any(filter(was_defeated, self.players.values())):  # type:ignore [arg-type]
+            return None
+
+        winner: T.Optional[str] = None
+        for k, v in self.players.items():
+            if v["hp"] > 0:
+                winner = k
+                break
+
+        assert winner is not None
+        
+        return self._replace(winner=winner, finished=int(time.time()))
 
     def end_turn(self, player: str):
         self.turns.append([])
 
     def _can_draw(self, ttype: Target, t: T.Any) -> bool:
         if ttype == Target.Player:
-            drawn = any(filter(lambda e: e[0] == t and e[1] == "draw", self.turns[-1]))
+            def had_drawn(e: Event) -> bool:
+                return e[0] == t and e[1] == "draw"
+
+            drawn = any(filter(had_drawn, self.turns[-1])) # type: ignore[arg-type]
             if drawn:
                 return False
 
@@ -140,10 +148,13 @@ class Match(T.NamedTuple):
         """
 
         card: dict = {}
-        target: str = next(
-            filter(lambda e: e != played_by, self.data["players"].keys()), None
+        target: T.Optional[str] = next(
+            filter(lambda e: e != played_by, self.players.keys()), None
         )
         dmg = int(card[op_dmg_key])
+
+        if target is None:
+            return None
 
         self.do(target, "life", (-1 * (op_perc * int(card[op_dmg_key]))))
         self.do(played_by, "life", (-1 * (pl_perc * int(card[pl_dmg_key]))))

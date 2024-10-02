@@ -206,7 +206,7 @@ def card(data: dict) -> list[T.Union[str, dict, list]]:
             ],
         ],
         ["hr"],
-        ["p", d["J_value"]] if "J_value" in d else None,
+        ["p", d["J_value"]] if "J_value" in d else None, # type: ignore[list-item]
         [
             "small",
             {"class": "c-content"},
@@ -235,7 +235,7 @@ def card_complexity(level: str) -> list[T.Union[str, dict, list]]:
             ["img", {"src": "/resources/app/img/warrior-dude.jpg"}],
         ],
         ["hr"],
-        calc(":J") <= limit and ["p", ":J"],
+        calc(":J") <= limit and ["p", ":J"], # type: ignore[list-item]
         ["small", {"id": f"card-{identifier}", "class": "c-content"}, ":D"],
         ["hr"],
         ["p", ["b", ":E"], ["b", ":F"], calc(":G") <= limit and ["b", ":G"]],

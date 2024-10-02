@@ -4,11 +4,15 @@ import math
 import os
 import random
 import time
+import typing as T
 import uuid
 
 from flask import Blueprint, Response, redirect, request
 from pyhiccup.core import _convert_tree, html
+from solders.keypair import Keypair
+from solders.pubkey import Pubkey
 from types import SimpleNamespace
+from werkzeug.datastructures.structures import ImmutableMultiDict
 
 from cardcraft.app.controllers.cards import card
 from cardcraft.app.services.db import gamedb
@@ -100,26 +104,39 @@ async def show_match(match_id: str):
                         "Refresh",
                     ],
                     ["span", " | "],
-                    [
-                        "a",
-                        {
-                            "class": "btn red",
-                            "hx-post": f"/web/part/game/matches/{match_id}/do",
-                            "hx-vals": "js:{"
-                            + f"event: ['{identity}', 'end_turn', null]"
-                            + "}",
-                            "hx-ext": "json-enc",
-                            "hx-trigger": "click",
-                            "hx-swap": "none",
-                        },
-                        "End turn",
-                    ] if game.get('is_turn', Target.Player, identity) else (["small", "Opponent turn"] if game.winner is None else ["small", f"{game.winner} WON"]),
+                    (
+                        [
+                            "a",
+                            {
+                                "class": "btn red",
+                                "hx-post": f"/web/part/game/matches/{match_id}/do",
+                                "hx-vals": "js:{"
+                                + f"event: ['{identity}', 'end_turn', null]"
+                                + "}",
+                                "hx-ext": "json-enc",
+                                "hx-trigger": "click",
+                                "hx-swap": "none",
+                            },
+                            "End turn",
+                        ]
+                        if game.get("is_turn", Target.Player, identity)
+                        else (
+                            ["small", "Opponent turn"]
+                            if game.winner is None
+                            else ["small", f"{game.winner} WON"]
+                        )
+                    ),
                     ["span", " | "],
                     [
-                        "p", {"class": "btn grey"},
+                        "p",
+                        {"class": "btn grey"},
                         await show_match_pot_status(match_id),
                     ],
-                    ["p", {"class": "btn blue lighten-2"}, "PASS"] if game.get("can_respond", Target.Player, identity) else ["small", "/"],
+                    (
+                        ["p", {"class": "btn blue lighten-2"}, "PASS"]
+                        if game.get("can_respond", Target.Player, identity)
+                        else ["small", "/"]
+                    ),
                     [
                         "div",
                         {"class": "board"},
@@ -260,7 +277,7 @@ async def show_match(match_id: str):
                                         for i, _ in enumerate(deck)
                                     ]
                                     if 0 < len(deck)
-                                    else ["p", "No cards left in deck"]
+                                    else ["p", "No cards left in deck"] # type: ignore[list-item]
                                 ),
                             ],
                         ],
@@ -271,6 +288,7 @@ async def show_match(match_id: str):
     )
 
     return resp
+
 
 @controller.route("/web/part/game/matches/new/decks", methods=["POST"])
 async def new_match_deck_selection():
@@ -287,13 +305,20 @@ async def new_match_deck_selection():
     if 0 < len(unfinished):
         raise Exception("You are already participating in a match!")
 
-    decks: list[dict] = await gamedb.decks.find({"owner": identity}).to_list()
+    decks: list[dict[str, T.Any]] = await gamedb.decks.find({"owner": identity}).to_list()
     if 0 < len(decks):
         # player has no decks, use a pre-defined starter deck
         pass
 
     match_secret = str(uuid.uuid4())
     mem["csrf"][match_secret] = int(time.time())
+
+    wallet: T.Optional[Keypair] = pot.get_match_wallet(mem["csrf"][match_secret])
+
+    if wallet is None:
+        raise Exception("Match wallet not selected - report to administrator!")
+
+    addr: Pubkey = wallet.pubkey()  # type: ignore[attr-defined]
 
     return _convert_tree(
         [
@@ -316,16 +341,19 @@ async def new_match_deck_selection():
                                         {
                                             "id": "deck-selector",
                                             "type": "radio",
-                                            "value": deck["id"],
+                                            "value": deck["id"], # type: ignore[list-item]
                                         },
                                         deck["name"],
                                     ],
                                 ],
                             ]
-                            for deck in decks
+                            for deck in decks # type: ignore[list-item]
                         ],
                     ],
-                    ["input", {"type": "hidden", "name": "csrf", "value": match_secret}],
+                    [
+                        "input",
+                        {"type": "hidden", "name": "csrf", "value": match_secret},
+                    ],
                     ["small", {"class": "red-text"}, "*Required"],
                     ["br"],
                     [
@@ -356,7 +384,7 @@ async def new_match_deck_selection():
                         "a",
                         {
                             "class": "btn purple darken-1",
-                            "onclick": f"window.purse.pot('{pot.get_match_wallet(mem['csrf'][match_secret]).pubkey()}', document.querySelector('#pot-lamports').value)",
+                            "onclick": f"window.purse.pot('{addr}', document.querySelector('#pot-lamports').value)",
                         },
                         "Add to pot",
                     ],
@@ -374,7 +402,12 @@ async def new_match_deck_selection():
 
 @controller.route("/web/part/game/matches/new/pot-fee", methods=["POST"])
 async def new_match_pot_fee():
-    amount: int = int(request.json.get("lamports") or 0)
+    body: T.Optional[dict] = request.json
+
+    if body is None:
+        raise Exception("No data was sent!")
+
+    amount: int = int(body.get("lamports") or 0)
     fee: int = pot.get_pot_fee(amount)
     is_ok: bool = (fee * 1.2) < amount
 
@@ -393,35 +426,49 @@ async def show_match_pot_status(match_id: str):
 
     @todo move match win payout elsewhere
     """
-    match: dict = await gamedb.matches.find_one({"id": match_id})
+    match: T.Optional[dict] = await gamedb.matches.find_one({"id": match_id})
+
+    if match is None:
+        raise Exception("Match not found!")
 
     total: int = 0
 
     for name in match["players"].keys():
         _: dict = match["players"][name]["pot"]
         if _["lamports"] > 0:
-            if name in ["bot1", "bot2", "bot3"]: # ... etc, @todo manage bots
+            if name in ["bot1", "bot2", "bot3"]:  # ... etc, @todo manage bots
                 total += _["lamports"]
                 continue
 
             if _["txsig"] is not None:
-                total += pot.get_transaction_details(
+                total += pot.get_transaction_details(  # type: ignore [attr-defined]
                     _["txsig"], commitment="confirmed"
                 ).amount
 
     if match["winner"] is not None:
         trunc: str = match["winner"][0:7]
-        paid: bool = await gamedb.matches.find_one({
-            "id": match_id, 
-            f"players.{match['winner']}.pot.payoutsig": {"$exists": False}
-        }) is None
+        paid: bool = (
+            await gamedb.matches.find_one(
+                {
+                    "id": match_id,
+                    f"players.{match['winner']}.pot.payoutsig": {"$exists": False},
+                }
+            )
+            is None
+        )
 
         if paid:
             return f"PAID: {trunc}, AMOUNT: {total}"
 
-        payoutsig: str = pot.pay_match_balance(match)
-        
-        await gamedb.matches.update_one({"id": match_id}, {"$set": {f"players.{match['winner']}.pot.payoutsig": payoutsig}})
+        payoutsig: T.Optional[str] = pot.pay_match_balance(match)
+
+        if payoutsig is None:
+            raise Exception("Cannot verify payout signature!")
+
+        await gamedb.matches.update_one(
+            {"id": match_id},
+            {"$set": {f"players.{match['winner']}.pot.payoutsig": payoutsig}},
+        )
         return f"PAID: {trunc}, AMOUNT: {total}, SIG: {payoutsig}"
 
     return f"POT: {total}"
@@ -435,8 +482,13 @@ async def new_match():
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
     assert identity is not None
 
+    form: ImmutableMultiDict[str, str] = request.form
+
+    if form is None:
+        raise Exception("Input data missing!")
+
     # csrf token
-    match_secret = request.form.get("csrf")
+    match_secret: T.Optional[str] = form.get("csrf")
     assert match_secret is not None
 
     # match creation timestamp
@@ -444,10 +496,17 @@ async def new_match():
     assert created is not None
 
     # deck selection
-    deck_id: str = request.form.get("deck_id")
+    deck_id: T.Optional[str] = form.get("deck_id")
+
+    if deck_id is None:
+        raise Exception("No deck was selected for player!")
+
     deck_pl: T.Optional[dict] = await gamedb.decks.find_one(
         {"owner": identity, "id": deck_id}
     )
+
+    if deck_pl is None:
+        raise Exception("Cannot find a deck for player!")
 
     # shuffle the decks
     deck_op = deck_pl
@@ -486,26 +545,19 @@ async def new_match():
         await gamedb.matches.find(lookup).sort({"created": 1}).limit(1).to_list()
     )
     prev_pot: dict = next(iter(prev), {})
+    prev_pot_amount: int = (
+        functools.reduce(  # type: ignore [assignment]
+            lambda a, e: a.get(e, {}), ["players", "bot1", "pot", "lamports"], prev_pot
+        )
+        or 0
+    )
 
     limit: int = int(os.getenv("BOT_POT_LAMPORT_MAX", 0))
-    derived: int = math.ceil(
-        0.5
-        * min(
-            limit,
-            (
-                functools.reduce(
-                    lambda a, e: a.get(e, {}),
-                    ["players", "bot1", "pot", "lamports"],
-                    prev_pot,
-                )
-                or 0
-            ),
-        )
-    )
+    derived: int = math.ceil(0.5 * min(limit, prev_pot_amount))
 
     # has the amount
     if derived > 0:
-        if pot.get_bot_balance(idx=1) <= derived:
+        if (pot.get_bot_balance(idx=1) or 0) <= derived:
             derived = 0
 
     # check if the amount makes sense
@@ -551,7 +603,15 @@ async def new_match():
 
 @controller.route("/web/part/game/matches/<match_id>/do", methods=["POST"])
 async def match_add_event(match_id: str):
-    e, a, v = request.json.get("event")
+    body: T.Optional[dict] = request.json
+
+    if body is None:
+        raise Exception("Nothing was sent!")
+
+    e, a, v = body.get("event", [None, None, None])
+
+    if e is None and a is None:
+        raise Exception("Event entity and attribute cannot be nil valued!")
 
     sess_id: T.Optional[str] = request.cookies.get("ccraft_sess")
     assert sess_id is not None
@@ -564,7 +624,7 @@ async def match_add_event(match_id: str):
 
     assert identity == e
 
-    lookup = {
+    lookup: dict[str, T.Any] = {
         f"players.{identity}": {"$exists": True},
         "finished": None,
     }

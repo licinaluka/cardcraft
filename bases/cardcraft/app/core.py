@@ -70,9 +70,25 @@ async def landing():
 
 @app.route("/api/part/game/authn", methods=["POST"])
 async def authn():
-    cid: int = request.json.get("challenge")
-    nonce: str = request.json.get("nonce")
-    signature: str = request.json.get("signature")
+    body: T.Optional[dict] = request.json
+
+    if body is None:
+        raise Exception('No data sent!')
+
+    cid: T.Optional[int] = body.get("challenge")
+
+    if cid is None:
+        raise Exception('Challenge is missing!')
+
+    nonce: T.Optional[str] = body.get("nonce")
+
+    if nonce is None:
+        raise Exception('Nonce is missing!')
+
+    signature: T.Optional[str] = body.get("signature")
+
+    if signature is None:
+        raise Exception('Signature is missing!')
 
     ref: T.Optional[str] = request.cookies.get("ccraft_sess")
 
@@ -100,8 +116,7 @@ async def authn():
         upsert=True,
     )
 
-    resp = Response()
-    resp.code = 204
+    resp = Response(status=204)
     return resp
 
 @app.route("/api/part/game/authn/logout", methods=["GET"])
@@ -119,20 +134,32 @@ async def logout():
 async def challenge():
     ref: T.Optional[str] = request.cookies.get("ccraft_sess")
 
-    session = SimpleNamespace()
-    session.asserted: bool = ref is not None
-    session.exists: bool = ref in mem["session"]
-    session.is_valid: bool = (int(time.time()) - 3600) < mem["session"].get(
-        ref, {}
-    ).get("verification_time", int(time.time()))
+    session = SimpleNamespace(
+        asserted=ref is not None,
+        exists=ref in mem["session"],
+        is_valid=(int(time.time()) - 3600) < mem["session"].get(ref, {}).get("verification_time", int(time.time()))
+    )
+
 
     if session.asserted and session.exists and session.is_valid:
         return Response(json.dumps({"detail": "Already logged in"}), status=302)
 
-    key: str = request.json.get("key")
-    nonce: str = request.json.get("nonce")
+    body: T.Optional[dict] = request.json
 
-    ref: str = str(uuid.uuid4())
+    if body is None:
+        raise Exception('No data sent!')
+
+    key: T.Optional[str] = body.get("key")
+
+    if key is None:
+        raise Exception('Key is missing!')
+
+    nonce: T.Optional[str] = body.get("nonce")
+
+    if nonce is None:
+        raise Exception('Nonce is missing!')
+
+    ref = str(uuid.uuid4())
     cid: int = mem["cid"]
 
     guid: str = str(uuid.uuid4())

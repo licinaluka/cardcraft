@@ -18,7 +18,7 @@ class Nemesis:
     def __init__(self, name: str):
         self.name = name
 
-    def do(self, match: Match, responses: list[str] = None) -> bool:
+    def do(self, match: Match) -> bool:
         """do something
 
         @param match
@@ -28,7 +28,7 @@ class Nemesis:
         positions: list[list[str]] = [
             [f"f-{i}-{j}" for j, spot in enumerate(field) if spot is None] for i, field in enumerate(match.fields) if i < 3
         ]
-        responses = match.responses.get(self.name, [])
+        responses: list[str] = match.responses.get(self.name, [])
 
         # if 0 < len(responses):
         # choose one of the responses
