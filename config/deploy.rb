@@ -1,19 +1,64 @@
 # config valid for current version and patch releases of Capistrano
+require 'json'
+
 lock "~> 3.19.1"
+
+$stdout.sync = true
 
 set :application, "my_app_name"
 set :repo_url, "git@example.com:me/my_repo.git"
 
 set :deploy_to, "/tmp/cardcraft"
 
-require 'json'
 vars = JSON.parse(File.read(Dir.pwd.concat("/config/deploy/prod.json")))
 
 # @todo for a fresh server
 # - setup docker
 # - setup python runtime and its prerequisites
 
+
+task "typechecks" do
+  run_locally do
+    execute (
+      ["cd", "projects/cardcraft-web", "&&"] +
+      [
+        "poetry",
+        "run",
+        "mypy",
+        "--disable-error-code=import-untyped",
+        "--disable-error-code=import-not-found",
+        "--show-error-context",
+        "--pretty",
+        "--soft-error-limit=1",
+        "--check-untyped-defs",
+        "../../bases/cardcraft/app"
+      ]
+    ).join " "
+  end
+end
+
+task "tests" do
+  run_locally do
+    execute (
+      ["cd", "projects/cardcraft-web", "&&"] +
+      [
+        "poetry",
+        "run",
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "cardcraft/app"
+      ]
+    ).join " "
+  end
+end
+
 task "up" do
+  invoke "typechecks"
+  invoke "tests"
+
   on roles ["web"] do |host|
     execute "rm -rf #{deploy_to}"
   end
