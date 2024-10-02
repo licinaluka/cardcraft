@@ -244,6 +244,10 @@ def card_complexity(level: str) -> list[T.Union[str, dict, list]]:
 
 @controller.route("/cards", methods=["GET"])
 async def list_cards():
+    sess_id: T.Optional[str] = request.cookie.get("ccraft_sess", None)
+
+    assert sess_id is not None
+
     res = await gamedb.cards.find({}).to_list()
 
     create_btn = [

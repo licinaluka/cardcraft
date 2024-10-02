@@ -6,7 +6,9 @@ from unittest.mock import AsyncMock, Mock, patch
 from cardcraft.app.services.engine import Engine
 
 card: dict = {
-    "id": "abc123"
+    "id": "abc123",
+    "E_key": "atk",
+    "E_value": 300
 }
 
 class TestEngine(unittest.IsolatedAsyncioTestCase):
@@ -31,3 +33,36 @@ class TestEngine(unittest.IsolatedAsyncioTestCase):
         processed = await Engine().process(match)
 
         self.assertEquals(card, match.fields[3][0])
+
+    @patch("cardcraft.app.services.engine.Engine.card", new=AsyncMock(return_value=card))
+    async def test_engine_reduces_player_hp_after_parsed_attack(self):
+        
+        match = SimpleNamespace(
+            cursor=[0, 0],
+            turns=[[
+               [ "xyz", "player uses abc123 to attack unit-bot1", None]
+            ]],
+            players={
+                "xyz": {
+                    "hand": ["abc123", "XYZ"]
+                },
+                "bot1": {
+                    "hand": [],
+                    "hp": 5_000
+                }
+            }
+        )
+        
+        target = "bot1"
+        hp_before = match.players[target]["hp"]
+
+        engine = Engine()
+        processed = await engine.process(match)
+        engine.resolve(match)
+
+        self.assertEquals(hp_before - card["E_value"], match.players[target]["hp"])
+
+    async def test_engine_prevents_attack_from_noncontrolled_cards(self):
+
+        
+        self.assertTrue(False)
