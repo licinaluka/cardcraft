@@ -80,7 +80,7 @@ end
 
 task "web-stop" do
   on roles ["web"] do |host|
-    execute "cd #{deploy_to}/projects/aries && ./stop.sh"
+    execute "cd #{deploy_to}/projects/cardcraft-web && ./stop.sh"
   end
 end
 
