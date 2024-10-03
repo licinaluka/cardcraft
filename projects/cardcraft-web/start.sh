@@ -1,10 +1,13 @@
 #!/bin/bash
 
+set -e
+
+touch .pid
+
 if pgrep -F .pid; then
     echo Already up
     exit
 fi
                                                      
-export LOCALONLY=true
-poetry run nohup python3 main.py 2>&1 &
+$HOME/.local/bin/poetry run nohup python3 main.py > /tmp/cardcraft.log 2>&1 &
 echo $! > .pid

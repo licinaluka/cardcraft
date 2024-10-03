@@ -7,6 +7,7 @@ from werkzeug.datastructures.structures import ImmutableMultiDict
 
 from cardcraft.app.controllers.cards import card
 from cardcraft.app.views.base import hiccpage, trident
+from cardcraft.app.views.decks import create_deck, listed, shown
 from cardcraft.app.views.navigation import menu
 from cardcraft.app.services.db import gamedb
 from cardcraft.app.services.mem import mem
@@ -26,54 +27,11 @@ async def list_decks():
     listing: list = [
         "p",
         {"class": "blank"},
-        [
-            ["span", "No decks!"]
-        ],
+        [["span", "No decks!"]],
     ]
 
     if 0 < len(decks):
-        listing = [
-            [
-                "a",
-                {
-                    "class": "btn purple",
-                    "hx-get": "/web/part/game/decks/new",
-                    "hx-target": ".tertiary",
-                },
-                "create a deck",
-            ],
-            [
-                "ul",
-                {"class": "collection"},
-                [
-                    [
-                        "li",
-                        {"class": "collection-item avatar"},
-                        [
-                            [
-                                "img",
-                                {
-                                    "class": "circle",
-                                    "src": "/resources/app/img/card-back.jpeg",
-                                },
-                                " ",
-                            ],
-                            [
-                                "a",
-                                {
-                                    "class": "title",
-                                    "hx-get": f"/web/part/game/decks/{e['id']}",
-                                    "hx-target": ".tertiary",
-                                },
-                                e['name'], 
-                            ],
-                            ["p", ["small", f"{len(e['cards'])} in deck"]],
-                        ],
-                    ]
-                    for e in decks
-                ],
-            ],
-        ]
+        listing = listed(decks)
 
     return await hiccpage([trident(menu(), listing, ["p", "No deck selected"])])
 
@@ -94,87 +52,13 @@ async def show_deck(deck_id: str):
         raise Exception("Deck not found!")
 
     used: list = await gamedb.cards.find({"id": {"$in": deck["cards"]}}).to_list()
-
     used_ids: list = list(map(lambda e: e["id"], used))
-    used_view: list = [card(e) for e in used] or ["p", "Put cards here"]
 
     available: list = list(
         filter(lambda e: e["id"] not in used_ids, await gamedb.cards.find({}).to_list())
     )
 
-    available_view: list = [card(e) for e in available] or [
-        "p",
-        "No unused cards availble",
-    ]
-
-    return _convert_tree(
-        [
-            "div",
-            {"class": "game"},
-            ["h3", "Deck builder"],
-            [
-                "div",
-                {
-                    "style": "display:flex;flex-direction:row;justify-content:space-between;",
-                },
-                [
-                    [
-                        "form",
-                        {
-                            "hx-put": f"/web/part/game/decks/{deck_id}",
-                            "hx-target": ".tertiary",
-                            "style": "flex-grow: 1; height: 90vh; overflow-y: scroll; margin: 1em; padding: 1em;",
-                        },
-                        [
-                            [
-                                "input",
-                                {
-                                    "type": "text",
-                                    "name": "name",
-                                    "value": deck["name"],
-                                    "placeholder": "Deck name",
-                                },
-                            ],
-                            ["input", {"type": "submit"}],
-                            ["hr"],
-                            [
-                                "div",
-                                [
-                                    [
-                                        "div",
-                                        {
-                                            "class": "deck-view spot",
-                                            "style": "overflow-y:scroll;",
-                                            "ondrop": "drop(event)",
-                                            "ondragover": "allowDrop(event)",
-                                            "onclick": "move(event)",
-                                            "style": "background: #111; padding-bottom: 5em;",
-                                        },
-                                        [["p", "deck view:"], used_view],
-                                    ]
-                                ],
-                            ],
-                        ],
-                    ],
-                    [
-                        "div",
-                        {
-                            "class": "cards-view spot",
-                            "style": "overflow-y:scroll;",
-                            "ondrop": "drop(event)",
-                            "ondragover": "allowDrop(event)",
-                            "onclick": "move(event)",
-                            "style": "background: #111; padding-bottom: 5em; flex-grow: 1; height: 90vh; overflow-y: scroll; margin: 1em; padding: 1em;",
-                        },
-                        [
-                            ["p", "available cards:"],
-                            available_view,
-                        ],
-                    ],
-                ],
-            ],
-        ]
-    )
+    return _convert_tree(shown(deck, available, used))
 
 
 @controller.route("/web/part/game/decks/new", methods=["POST"])
@@ -237,63 +121,4 @@ async def update_deck(deck_id: str):
 async def new_deck():
     available: list = await gamedb.cards.find({}).to_list()
 
-    return html(
-        [
-            "div",
-            {"class": "game"},
-            ["h2", "deck builder"],
-            [
-                "div",
-                {
-                    "style": "display:flex;flex-direction:row;justify-content:space-evenly;",
-                },
-                [
-                    [
-                        "form",
-                        {"hx-post": "/web/part/game/decks/new", "hx-target": "body"},
-                        [
-                            [
-                                "input",
-                                {
-                                    "type": "text",
-                                    "name": "name",
-                                    "placeholder": "Deck name",
-                                },
-                            ],
-                            ["input", {"type": "submit"}],
-                            [
-                                "div",
-                                [
-                                    [
-                                        "div",
-                                        {
-                                            "class": "deck-view spot",
-                                            "style": "overflow-y:scroll;",
-                                            "ondrop": "drop(event)",
-                                            "ondragover": "allowDrop(event)",
-                                            "onclick": "move(event)",
-                                        },
-                                        [["p", "deck view:"]],
-                                    ]
-                                ],
-                            ],
-                        ],
-                    ],
-                    [
-                        "div",
-                        {
-                            "class": "cards-view spot",
-                            "style": "overflow-y:scroll;",
-                            "ondrop": "drop(event)",
-                            "ondragover": "allowDrop(event)",
-                            "onclick": "move(event)",
-                        },
-                        [
-                            ["p", "available cards:"],
-                            [card(e) for e in available],
-                        ],
-                    ],
-                ],
-            ],
-        ]
-    )
+    return html(create_deck(cards=available))

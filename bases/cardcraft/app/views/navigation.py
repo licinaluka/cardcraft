@@ -4,15 +4,38 @@ from flask import request
 from cardcraft.app.services.db import gamedb
 from cardcraft.app.services.mem import mem
 
-def menu():
-    return ["div",
-      ["ul", {"class": "collection"}, [
-        ["li", {"class": "collection-item red-text"}, ["a", {"href": "/help"}, "HELP & FAQ"]],
-        ["hr"],
-        ["li", {"class": "collection-item"}, ["a", {"href": "/home"}, "MATCHES"]],
-        ["li", {"class": "collection-item"}, ["a", {"href": "/decks"}, "DECK BUILDER"]],
-        ["li", {"class": "collection-item"}, ["a", {"href": "/cards"}, "CARD CREATOR"]]]]]
 
+def menu():
+    return [
+        "div",
+        [
+            "ul",
+            {"class": "collection"},
+            [
+                [
+                    "li",
+                    {"class": "collection-item red-text"},
+                    ["a", {"href": "/help"}, "HELP & FAQ"],
+                ],
+                ["hr"],
+                [
+                    "li",
+                    {"class": "collection-item"},
+                    ["a", {"href": "/home"}, "MATCHES"],
+                ],
+                [
+                    "li",
+                    {"class": "collection-item"},
+                    ["a", {"href": "/decks"}, "DECK BUILDER"],
+                ],
+                [
+                    "li",
+                    {"class": "collection-item"},
+                    ["a", {"href": "/cards"}, "CARD CREATOR"],
+                ],
+            ],
+        ],
+    ]
 
 
 async def navigation():
@@ -25,9 +48,9 @@ async def navigation():
 
     authenticated: bool = sess_id is not None and sess_id in mem["session"]
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
-    
-    trunc: T.Optional[str]  = None
-    
+
+    trunc: T.Optional[str] = None
+
     if identity is not None:
         trunc = identity[0:7] + "..."
 
@@ -37,7 +60,7 @@ async def navigation():
             "id": "connection",
             "onclick": "window.purse.connect()",
         },
-        trunc or "connect o/"
+        trunc or "connect o/",
     ]
 
     return [
@@ -50,14 +73,28 @@ async def navigation():
                 {"onclick": "contexts()", "style": "background:blue;cursor:pointer"},
                 ["i", {"class": "material-icons insert_chart"}, " "],
             ],
-            ["li", ["a", {"onclick": "document.querySelector('#menu').style.display = document.querySelector('#menu').style.display == 'block' ? 'none': 'block'", "style":"transform: rotate(90deg);"}, "|||"]],
+            [
+                "li",
+                [
+                    "a",
+                    {
+                        "onclick": "document.querySelector('#menu').style.display = document.querySelector('#menu').style.display == 'block' ? 'none': 'block'",
+                        "style": "transform: rotate(90deg);",
+                    },
+                    "|||",
+                ],
+            ],
             ["li", ["a", {"href": "/home"}, "HOME"]],
             ["li", {"class": ""}, ["a", {"href": "/help"}, "HELP & FAQ"]],
-            (["li", ["a", {"href": "/api/part/game/authn/logout"}, "LOGOUT"]] if authenticated else ""),
+            (
+                ["li", ["a", {"href": "/api/part/game/authn/logout"}, "LOGOUT"]]
+                if authenticated
+                else ""
+            ),
             [
                 "li",
                 {"class": "right"},
-                sign_in if not authenticated else ["a", trunc] # type: ignore[list-item]
+                sign_in if not authenticated else ["a", trunc],  # type: ignore[list-item]
             ],
         ],
     ]

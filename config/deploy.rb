@@ -56,7 +56,8 @@ end
 task "up" do
   invoke "typechecks"
   invoke "tests"
-
+  invoke "web-stop"
+  
   on roles ["web"] do |host|
     execute "rm -rf #{deploy_to}"
   end
@@ -78,7 +79,7 @@ end
 
 task "web-stop" do
   on roles ["web"] do |host|
-    execute "cd #{deploy_to}/projects/cardcraft-web && ./stop.sh"
+    execute "cd #{deploy_to}/projects/cardcraft-web && ./stop.sh; true"
   end
 end
 
