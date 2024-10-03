@@ -13,6 +13,7 @@ import uuid
 
 from asgiref.wsgi import WsgiToAsgi
 from flask import Flask, Response, redirect, request, url_for
+from os.path import dirname, join
 from pyhiccup.core import _convert_tree, html
 
 from cardcraft.app.controllers.authn import controller as authn
@@ -27,6 +28,8 @@ from cardcraft.app.views.navigation import menu, navigation
 from cardcraft.app.views.theme import theme
 
 app = Flask(__name__, static_url_path="/resources", static_folder="./resources")
+app.config["UPLOAD_FOLDER"] = join(dirname(__file__), "resources/app/img")
+
 app.register_blueprint(authn)
 app.register_blueprint(cards)
 app.register_blueprint(decks)

@@ -1,8 +1,10 @@
 import os
 import typing as T
 
-from flask import Blueprint, request
-from pyhiccup.core import html
+from flask import Blueprint, current_app, request, send_from_directory
+from os.path import join
+from pyhiccup.core import _convert_tree, html
+from werkzeug.utils import secure_filename
 
 from cardcraft.app.services.db import gamedb
 from cardcraft.app.services.game import Match
@@ -193,3 +195,54 @@ async def store_card():
 @controller.route("/web/part/game/cards/new/<level>", methods=["GET"])
 def new_card_next(level: str):
     return html(creation_detailed(level))
+
+
+@controller.route("/web/part/game/artwork/new", methods=["GET"])
+def artwork_form():
+    return _convert_tree(
+        [
+            "div",
+            {"id": "artwork", "class": "game"},
+            [
+                "form",
+                {
+                    "hx-post": "/web/part/game/artwork/new",
+                    "enctype": "multipart/form-data",
+                },
+                [
+                    ["input", {"type": "file", "name": "artwork"}],
+                    ["button", {"type": "submit", "class": "btn"}, "SEND"],
+                ],
+            ],
+        ]
+    )
+
+
+@controller.route("/web/part/game/artwork/new", methods=["POST"])
+def artwork_upload():
+    f = request.files["artwork"]
+
+    assert f is not None
+    assert f.filename != ""
+    filename = secure_filename(f.filename)
+    f.save(join(current_app.config["UPLOAD_FOLDER"], filename))
+
+    return _convert_tree(
+        [
+            [
+                "div",
+                {"class": "floater"},
+                [
+                    "a",
+                    {
+                        "class": "material-icons",
+                        "href": "#",
+                        "onclick": "document.querySelector('#artwork').classList.toggle('game')",
+                    },
+                    "close",
+                ],
+            ],
+            ["p", {}, filename],
+            ["img", {"src": f"resources/app/img/{filename}"}],
+        ]
+    )

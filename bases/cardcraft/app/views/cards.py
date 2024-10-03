@@ -113,6 +113,16 @@ def listed(cards: list):
             "div",
             [
                 create_btn,
+                ["span", " | "],
+                [
+                    "a",
+                    {
+                        "class": "btn purple lighten-2",
+                        "hx-get": "/web/part/game/artwork/new",
+                        "hx-target": ".tertiary",
+                    },
+                    "upload artwork",
+                ],
                 [
                     "div",
                     {"class": "collection black"},
@@ -149,7 +159,7 @@ def creation_complexity():
         "div",
         {"class": "game"},
         [
-            ["h3", "Card builder"],
+            ["h4", "Card builder"],
             [
                 "p",
                 "Select a layout/complexity (note, field I is for card API functions):",
