@@ -223,8 +223,10 @@ def artwork_upload():
     f = request.files["artwork"]
 
     assert f is not None
+    assert f.filename is not None
     assert f.filename != ""
-    filename = secure_filename(f.filename)
+
+    filename: str = secure_filename(f.filename)
     f.save(join(current_app.config["UPLOAD_FOLDER"], filename))
 
     return _convert_tree(
