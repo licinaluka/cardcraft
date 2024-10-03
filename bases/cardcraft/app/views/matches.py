@@ -42,7 +42,7 @@ def listed(matches: list) -> list[Node]:
                         [
                             "img",
                             {
-                                "src": f"/resources/app/img/card-back-ue-pirated.jpg",
+                                "src": f"/resources/app/img/match.jpeg",
                                 "class": "circle",
                             },
                         ],

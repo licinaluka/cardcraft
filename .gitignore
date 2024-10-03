@@ -15,4 +15,5 @@ __pycache__/*
 
 *.env
 
+vendor/
 config/deploy/prod.json

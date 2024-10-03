@@ -27,12 +27,7 @@ async def list_decks():
         "p",
         {"class": "blank"},
         [
-            ["span", "No decks!"],
-            [
-                "a",
-                {"hx-get": "/web/part/game/decks/new", "hx-target": ".tertiary"},
-                "create one",
-            ],
+            ["span", "No decks!"]
         ],
     ]
 
@@ -40,10 +35,44 @@ async def list_decks():
         listing = [
             [
                 "a",
-                {"hx-get": f"/web/part/game/decks/{e['id']}", "hx-target": ".tertiary"},
-                f"{e['name']}, ({len(e['cards'])})",
-            ]
-            for e in decks
+                {
+                    "class": "btn purple",
+                    "hx-get": "/web/part/game/decks/new",
+                    "hx-target": ".tertiary",
+                },
+                "create a deck",
+            ],
+            [
+                "ul",
+                {"class": "collection"},
+                [
+                    [
+                        "li",
+                        {"class": "collection-item avatar"},
+                        [
+                            [
+                                "img",
+                                {
+                                    "class": "circle",
+                                    "src": "/resources/app/img/card-back.jpeg",
+                                },
+                                " ",
+                            ],
+                            [
+                                "a",
+                                {
+                                    "class": "title",
+                                    "hx-get": f"/web/part/game/decks/{e['id']}",
+                                    "hx-target": ".tertiary",
+                                },
+                                e['name'], 
+                            ],
+                            ["p", ["small", f"{len(e['cards'])} in deck"]],
+                        ],
+                    ]
+                    for e in decks
+                ],
+            ],
         ]
 
     return await hiccpage([trident(menu(), listing, ["p", "No deck selected"])])
@@ -57,10 +86,12 @@ async def show_deck(deck_id: str):
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
     assert identity is not None
 
-    deck: T.Optional[dict] = await gamedb.decks.find_one({"id": deck_id, "owner": identity})
+    deck: T.Optional[dict] = await gamedb.decks.find_one(
+        {"id": deck_id, "owner": identity}
+    )
 
     if deck is None:
-        raise Exception('Deck not found!')
+        raise Exception("Deck not found!")
 
     used: list = await gamedb.cards.find({"id": {"$in": deck["cards"]}}).to_list()
 
@@ -156,12 +187,12 @@ async def store_deck():
 
     form: ImmutableMultiDict[str, str] = request.form
     if form is None:
-        raise Exception('Form not sent!')
+        raise Exception("Form not sent!")
 
     name: T.Optional[str] = form.get("name")
 
     if name is None:
-        raise Exception('Name is missing!')
+        raise Exception("Name is missing!")
 
     cards: list[str] = form.getlist("card")
 
@@ -183,17 +214,17 @@ async def update_deck(deck_id: str):
     form: ImmutableMultiDict[str, str] = request.form
 
     if form is None:
-        raise Exception('Form not sent!')
+        raise Exception("Form not sent!")
 
     name: T.Optional[str] = form.get("name")
 
     if name is None:
-        raise Exception('Name is missing!')
+        raise Exception("Name is missing!")
 
     cards: T.Optional[list[str]] = form.getlist("card")
 
     if cards is None:
-        raise Exception('Cards are missing!')
+        raise Exception("Cards are missing!")
 
     await gamedb.decks.update_one(
         {"id": deck_id}, {"$set": {"name": name, "cards": cards, "owner": identity}}

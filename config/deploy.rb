@@ -3,8 +3,6 @@ require 'json'
 
 lock "~> 3.19.1"
 
-$stdout.sync = true
-
 set :application, "my_app_name"
 set :repo_url, "git@example.com:me/my_repo.git"
 

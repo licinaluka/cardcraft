@@ -75,7 +75,7 @@ h1 {
 a {
   color: inherit;
 }
-                                                                      
+
 .item {
   background:inherit;
   color: inherit;
@@ -208,7 +208,7 @@ img {
   margin: 3px 3px;
   width: 10em;
   height: 18em;
-  background: url('/resources/app/img/card-back-ue-pirated.jpg');
+  background: url('/resources/app/img/card-back.jpeg');
   background-size: 100% 100%;
 }
 
@@ -235,13 +235,13 @@ img {
 
 .game .opponent .card-render {
     display: block;
-    background: url('/resources/app/img/card-back-ue-pirated.jpg');
+    /* background: url('/resources/app/img/card-back.jpeg'); */
     background-size: 100% 100%;
     width: 10em;
     height: 20em;
     padding: 1em;
     margin: 1em;
-    border: none;
+    border: 2px solid gold;
 }
 
 .game .card-render .c-image img {
@@ -413,7 +413,7 @@ img {
   height: 50px;
   animation: spin 8s linear;
 }
-                                                                      
+
 #loading.htmx-request, #loading.shown {
   display: block !important;
 }

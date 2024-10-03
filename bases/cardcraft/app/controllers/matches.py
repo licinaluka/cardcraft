@@ -144,7 +144,6 @@ async def show_match(match_id: str):
                             "div",
                             {"class": "opponent"},
                             [
-                                ["p", f"{op['name']} {op['hp']}/{op['hpmax']}"],
                                 [
                                     "div",
                                     {"class": "hand"},
@@ -156,7 +155,7 @@ async def show_match(match_id: str):
                                                 {
                                                     "A_value": "?",
                                                     "D_value": "?",
-                                                    "C_value": None,
+                                                    "C_value": "card-unknown.jpeg",
                                                 }
                                             ),
                                         ]
@@ -169,7 +168,6 @@ async def show_match(match_id: str):
                             "div",
                             {"class": "battle", "id": "battle"},
                             [
-                                ["p", "BAT"],
                                 [
                                     "div",
                                     {"id": f"unit-bot1"},
@@ -177,6 +175,7 @@ async def show_match(match_id: str):
                                         "div",
                                         {
                                             "class": "spot",
+                                            "style": "width:7em;height:14em;",
                                             "ondrop": "drop(event)",
                                             "ondragover": "allowDrop(event)",
                                             "onclick": "move(event)",
@@ -185,10 +184,12 @@ async def show_match(match_id: str):
                                             {
                                                 "id": "something",
                                                 "A_value": op["name"],
-                                                "C_value": "elemental-interception.jpeg",
+                                                "C_value": "bot1.jpeg",
                                                 "D_value": "Pro card player, trained specifically to challenge you",
                                             }
                                         ),
+                                        ["small", f"{op['hp']}/{op['hpmax']}"],
+                                        ["p", op["name"]],
                                     ],
                                 ],
                                 [

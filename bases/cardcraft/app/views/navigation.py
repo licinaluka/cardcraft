@@ -6,10 +6,12 @@ from cardcraft.app.services.mem import mem
 
 def menu():
     return ["div",
-      ["ul", [
-        ["li", ["a", {}, "MATCHES"]],
-        ["li", ["a", {"href": "/decks"}, "DECKS"]],
-        ["li", ["a", {"href": "/cards"}, "CARDS"]]]]]
+      ["ul", {"class": "collection"}, [
+        ["li", {"class": "collection-item red-text"}, ["a", {"href": "/help"}, "HELP & FAQ"]],
+        ["hr"],
+        ["li", {"class": "collection-item"}, ["a", {"href": "/home"}, "MATCHES"]],
+        ["li", {"class": "collection-item"}, ["a", {"href": "/decks"}, "DECK BUILDER"]],
+        ["li", {"class": "collection-item"}, ["a", {"href": "/cards"}, "CARD CREATOR"]]]]]
 
 
 
@@ -49,7 +51,8 @@ async def navigation():
                 ["i", {"class": "material-icons insert_chart"}, " "],
             ],
             ["li", ["a", {"onclick": "document.querySelector('#menu').style.display = document.querySelector('#menu').style.display == 'block' ? 'none': 'block'", "style":"transform: rotate(90deg);"}, "|||"]],
-            ["li", ["a", {"href": "/"}, "HOME"]],
+            ["li", ["a", {"href": "/home"}, "HOME"]],
+            ["li", {"class": ""}, ["a", {"href": "/help"}, "HELP & FAQ"]],
             (["li", ["a", {"href": "/api/part/game/authn/logout"}, "LOGOUT"]] if authenticated else ""),
             [
                 "li",
