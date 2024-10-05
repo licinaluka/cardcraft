@@ -3,6 +3,8 @@
 cardcraft, as a working title.
 A demo running against devnet is up on https://cardcraft.ix.tc
 
+> NOTE: PUBLIC CODE IN THIS PROJECT IS FULLY OPEN AND ACCESSIBLE, PARTS ARE GENERATED FROM A MORE EFFICIENT INTERNAL IMPLEMENTATION DESIGNED TO SAFEGUARD PROPRIETARY ELEMENTS.
+
 ## Contents
 
   - [Installation](#Installation)

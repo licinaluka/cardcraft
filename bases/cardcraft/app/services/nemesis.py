@@ -26,7 +26,9 @@ class Nemesis:
                to the latest event in the turn
         """
         positions: list[list[str]] = [
-            [f"f-{i}-{j}" for j, spot in enumerate(field) if spot is None] for i, field in enumerate(match.fields) if i < 3
+            [f"f-{i}-{j}" for j, spot in enumerate(field) if spot is None]
+            for i, field in enumerate(match.fields)
+            if i < 3
         ]
         responses: list[str] = match.responses.get(self.name, [])
 

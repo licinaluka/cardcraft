@@ -3,7 +3,7 @@ import functools
 import logging
 import multiprocessing
 import os
-import time
+import re
 import signal
 import sys
 import time
@@ -40,14 +40,15 @@ class Engine:
 
         # detect and process card movement
         # (like "$me plays card 123 to field position XYZ")
-        card_play_patt = r"\$(?P<player>\w+) plays card (?P<card>\w+) to field position (?P<position>\w+)"
+        card_play_patt = "(?P<player>\w+) plays card (?P<card>\w+) to (?P<targettype>\w+) position (?P<position>[\w|\-]+)"
         card_play = re.match(card_play_patt, entry)
         if card_play is not None:
 
             cid: str = card_play.group("card")
             card: dict = await self.card({"id": cid})
+            target_type: str = card_play.group("targettype")
 
-            _, *t = card_play.group("position")
+            _, *t = card_play.group("position").split("-")
 
             # def resolution(match: Match):
             if target_type == "field":
@@ -66,17 +67,17 @@ class Engine:
 
         # detect and register attacks
         # (like "player uses 8c3c71cdfb1ebe8d14d00c49d4f11051 to attack unit-bot1")
-        attack_patt = r"(?P<player>\w+) uses (?P<card>\w+) to attack (?P<unit>\w+)"
-        atrack = re.match(attack_patt, entry)
+        attack_patt = "(?P<player>\w+) uses (?P<card>\w+) to attack (?P<unit>[\w|\-]+)"
+        attack = re.match(attack_patt, entry)
         if attack is not None:
-            opponent: str = attack.group("unit")  # type: ignore[no-redef]
+            unit_type, unit = attack.group("unit").split("-")  # type: ignore[no-redef]
             cid: str = attack.group("card")  # type: ignore[no-redef]
             atk: int = int((await self.card({"id": cid})).get("E_value"))
 
             def resolution(match: Match):
-                if opponent in match.players:
+                if unit in match.players:
                     # attacks the opponent directly
-                    match.players[opponent]["hp"] -= atk
+                    match.players[unit]["hp"] -= atk
 
             self.resolutions.append(resolution)
 
@@ -200,6 +201,7 @@ def loop(lock: LockT):
                             "is_turn", Target.Player, opkey
                         ):
                             Nemesis(opkey).do(match=state)
+                            changed = state
 
                     then = state._asdict()
 
