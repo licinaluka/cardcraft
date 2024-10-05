@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "cardcraft-web"
+version = "0.1.0"
+description = ""
+authors = ["Luka L <licina.luka@outlook.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pyhiccup = "0.1"
+flask = {extras = ["async"], version = "^3.0.3"}
+requests = "2.32.3"
+solders = "0.21.0"
+python-dotenv = "0.20.0"
+base58 = "2.1.1"
+pynacl = "1.5.0"
+motor = "3.6.0"
+solana = "0.34.3"
+uvicorn = {version = "0.30.6", extras = ["standard"]}
+ipython = "8.0.0"
+mypy = "1.11.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
