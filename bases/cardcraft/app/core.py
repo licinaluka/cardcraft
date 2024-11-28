@@ -21,7 +21,7 @@ from cardcraft.app.controllers.cards import card, controller as cards
 from cardcraft.app.controllers.decks import controller as decks
 from cardcraft.app.controllers.matches import controller as matches
 from cardcraft.app.services.db import gamedb
-from cardcraft.app.services.engine import loop
+from cardcraft.app.services.engine import locked_loop
 from cardcraft.app.services.mem import mem
 from cardcraft.app.views.base import faq, hiccpage, landing as landingpage, trident
 from cardcraft.app.views.navigation import menu, navigation
@@ -36,18 +36,19 @@ app.register_blueprint(decks)
 app.register_blueprint(matches)
 
 
-lock = multiprocessing.Lock()
-p = multiprocessing.Process(target=loop, args=(lock,))
-p.start()
+private = os.getenv("PRIVATE_ENGINE", "0")
 
+if private != "1":
+    lock = multiprocessing.Lock()
+    p = multiprocessing.Process(target=locked_loop, args=(lock,))
+    p.start()
 
-def reloaded(*a):
-    p.terminate()
-    p.join()
-    sys.exit()
+    def reloaded(*a):
+        p.terminate()
+        p.join()
+        sys.exit()
 
-
-signal.signal(signal.SIGINT, reloaded)
+    signal.signal(signal.SIGINT, reloaded)
 
 
 # @app.errorhandler(Exception)

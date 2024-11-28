@@ -17,3 +17,5 @@ __pycache__/*
 
 vendor/
 config/deploy/prod.json
+
+projects/cardcraft-engine

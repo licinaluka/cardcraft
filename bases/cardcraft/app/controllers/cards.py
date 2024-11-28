@@ -7,7 +7,6 @@ from pyhiccup.core import _convert_tree, html
 from werkzeug.utils import secure_filename
 
 from cardcraft.app.services.db import gamedb
-from cardcraft.app.services.game import Match
 from cardcraft.app.views.base import hiccpage, trident
 from cardcraft.app.views.cards import (
     card,
@@ -16,6 +15,7 @@ from cardcraft.app.views.cards import (
     creation_detailed,
 )
 from cardcraft.app.views.navigation import menu, navigation
+from cardcraft.game.system import Match
 
 controller = Blueprint("cards", __name__)
 

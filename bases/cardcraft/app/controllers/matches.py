@@ -16,8 +16,6 @@ from werkzeug.datastructures.structures import ImmutableMultiDict
 
 from cardcraft.app.controllers.cards import card
 from cardcraft.app.services.db import gamedb
-from cardcraft.app.services.game import Match, Target
-from cardcraft.app.services.nemesis import Nemesis
 from cardcraft.app.services.mem import mem
 from cardcraft.app.services.pot import pot
 from cardcraft.app.views.matches import (
@@ -25,6 +23,7 @@ from cardcraft.app.views.matches import (
     shown,
     create_match_deck_selection,
 )
+from cardcraft.game.system import Match, Target
 
 controller = Blueprint("matches", __name__)
 

@@ -1,7 +1,7 @@
 import typing as T
 
-from cardcraft.app.services.game import Match, Target
 from cardcraft.app.views.cards import card
+from cardcraft.game.system import Match, Target
 
 Node = T.Union[str, dict, list]
 

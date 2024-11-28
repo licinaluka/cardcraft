@@ -1,7 +1,7 @@
 import os
 import typing as T
 
-from cardcraft.app.services.game import Match
+from cardcraft.game.system import Match
 
 
 def card(data: dict) -> list[T.Union[str, dict, list]]:

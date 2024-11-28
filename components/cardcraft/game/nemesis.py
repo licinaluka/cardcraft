@@ -3,7 +3,7 @@ import random
 import time
 import typing as T
 
-from cardcraft.app.services.game import Match, Target
+from cardcraft.game.system import Match, Target
 
 
 class Nemesis:
