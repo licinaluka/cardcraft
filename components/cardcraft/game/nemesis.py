@@ -3,6 +3,7 @@ import random
 import time
 import typing as T
 
+from pyrsistent import PVector, v
 from cardcraft.game.system import Match, Target
 
 
@@ -30,7 +31,9 @@ class Nemesis:
             for i, field in enumerate(match.fields)
             if i < 3
         ]
-        responses: list[str] = match.responses.get(self.name, [])
+        responses: PVector[str] = (
+            match.responses[self.name] if self.name in match.responses.keys() else v()
+        )
 
         # if 0 < len(responses):
         # choose one of the responses
@@ -47,6 +50,9 @@ class Nemesis:
         }.items():
             if match.get(f"can_{action}", Target.Player, self.name):
                 options.append([self.name, action, args])
+
+        while 1 > len(match.players[self.name]["hand"]):
+            time.sleep(1)
 
         for event in [
             f"bot plays card {random.choice(match.players[self.name]['hand'])} to field position {random.choice(random.choice(positions))}"

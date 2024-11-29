@@ -6,8 +6,9 @@ import typing as T
 
 from bson import ObjectId
 from enum import Enum
-from cardcraft.app.services.mem import mem
+from pyrsistent import PMap, PVector, m, v, freeze, thaw
 
+from cardcraft.app.services.mem import mem
 
 
 class Event(T.NamedTuple):
@@ -27,7 +28,7 @@ class Match(T.NamedTuple):
     id: str
 
     # play area(s)
-    fields: list[list[T.Optional[dict]]]
+    fields: PVector[PVector[T.Optional[dict]]]
 
     # player with first turn
     opener: str
@@ -45,24 +46,27 @@ class Match(T.NamedTuple):
     futures: dict[str, list[Event]] = {}
 
     # player data
-    players: dict[str, dict] = {}
+    players: PMap[str, PMap] = m()
 
     # player response options
-    responses: dict[str, list[str]] = {}
+    responses: PMap[str, PVector[str]] = m()
 
     # turn and event evaluated at the moment
-    cursor: list[int] = [0, 0]
+    cursor: PVector[int] = v(0, 0)
 
     # list of turns and events in each turn
-    turns: list[list[Event]] = [[]]
+    turns: PVector[PVector[Event]] = v(v())
 
     @staticmethod
     def create(data: dict):
         data.pop("_id")
-        return Match(**data)
+        return Match(**freeze(data))
 
-    def do(self, e: str, a: str, v: T.Any):
-        self.turns[-1].append(Event(e, a, v))
+    def asdict(self) -> dict:
+        return thaw(self)
+
+    def do(self, e: str, a: str, val: T.Any) -> None:
+        self.turns[-1].append(Event(e, a, val))
 
     def get(self, fn: str, ttype: Target, t: T.Any) -> T.Union[bool, int]:
         method = f"_{fn}"
@@ -72,11 +76,12 @@ class Match(T.NamedTuple):
 
         return getattr(self, method)(ttype, t)
 
-    def end(self) -> T.Optional['Match']:
+    def end(self) -> T.Optional["Match"]:
         def was_defeated(e: dict) -> bool:
             return e["hp"] <= 0
 
-        if not any(filter(was_defeated, self.players.values())):  # type:ignore [arg-type]
+        defeated: T.Iterable[dict] = filter(was_defeated, self.players.values())
+        if not any(defeated):
             return None
 
         winner: T.Optional[str] = None
@@ -86,18 +91,19 @@ class Match(T.NamedTuple):
                 break
 
         assert winner is not None
-        
+
         return self._replace(winner=winner, finished=int(time.time()))
 
     def end_turn(self, player: str):
-        self.turns.append([])
+        self.turns.append(v())
 
     def _can_draw(self, ttype: Target, t: T.Any) -> bool:
         if ttype == Target.Player:
+
             def had_drawn(e: Event) -> bool:
                 return e[0] == t and e[1] == "draw"
 
-            drawn = any(filter(had_drawn, self.turns[-1])) # type: ignore[arg-type]
+            drawn = any(filter(had_drawn, self.turns[-1]))  # type: ignore[arg-type]
             if drawn:
                 return False
 
@@ -125,7 +131,7 @@ class Match(T.NamedTuple):
             if 1 > len(self.players[player]["deck"]["cards"]):
                 break
 
-            card_id = self.players[player]["deck"]["cards"].pop()
+            card_id = self.players[player]["deck"]["cards"].delete(-1)
             self.players[player]["hand"].append(card_id)
 
     def v1_barrage(
@@ -159,7 +165,9 @@ class Match(T.NamedTuple):
         self.do(target, "life", (-1 * (op_perc * int(card[op_dmg_key]))))
         self.do(played_by, "life", (-1 * (pl_perc * int(card[pl_dmg_key]))))
 
-    def v1_debuff(self, card_id: str, played_by: str, stat: T.Literal["atk", "def"], amt: int):
+    def v1_debuff(
+        self, card_id: str, played_by: str, stat: T.Literal["atk", "def"], amt: int
+    ):
         """card can debuff targeted enemy card for $AMT of $STAT
 
         @param stat ark|def
@@ -169,7 +177,9 @@ class Match(T.NamedTuple):
         """
         pass
 
-    def v1_debuff_attacking(self, card_id: str, played_by: str, stat: T.Literal["atk", "def"], amt: int):
+    def v1_debuff_attacking(
+        self, card_id: str, played_by: str, stat: T.Literal["atk", "def"], amt: int
+    ):
         """card can debuff targeted attacking enemy card for $AMT of $STAT
 
         @param stat atk|def

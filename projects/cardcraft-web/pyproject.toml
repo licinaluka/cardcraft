@@ -19,6 +19,7 @@ solana = "0.34.3"
 uvicorn = {version = "0.30.6", extras = ["standard"]}
 ipython = "8.0.0"
 mypy = "1.11.2"
+pyrsistent = "0.20.0"
 
 
 [build-system]

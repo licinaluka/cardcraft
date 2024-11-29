@@ -2,6 +2,7 @@ import logging
 import typing as T
 
 from abc import abstractmethod
+from pyrsistent import PVector, v
 
 from cardcraft.game.db import gamedb
 from cardcraft.game.system import Match, Event
@@ -43,13 +44,13 @@ class BaseEngine(Engine):
             if not hasattr(match, fn):
                 # try to parse
                 await self.parse(match, event)
-
-                match.cursor[1] += 1
+                match.cursor.set(1, match.cursor[1] + 1)
                 continue
 
             if hasattr(match, f"_can_{fn}") and not getattr(match, f"_can_{fn}"):
                 logging.warning(f"failed attempt to {fn}")
-                match.cursor[1] += 1
+
+                match.cursor.set(1, match.cursor[1] + 1)
                 continue
 
             if args is not None:
@@ -60,15 +61,15 @@ class BaseEngine(Engine):
             else:
                 getattr(match, fn)(entity)
 
-            match.cursor[1] = 0 if fn == "end_turn" else match.cursor[1] + 1
+            match.cursor.set(1, 0 if fn == "end_turn" else match.cursor[1] + 1)
 
         # resolve the turn events
         if (
             0 < len(match.turns[turn_idx])
             and match.turns[turn_idx][-1][1] == "end_turn"
         ):
-            match.cursor[0] += 1
-            match.cursor[1] = 0
+            match.cursor.set(0, match.cursor[0] + 1)
+            match.cursor.set(1, 0)
             self.resolve(match)
             self.resolutions = []
 

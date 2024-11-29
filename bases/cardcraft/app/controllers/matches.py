@@ -66,7 +66,7 @@ async def show_match(match_id: str):
     game = Match.create(match)
 
     deck: list[dict] = await gamedb.cards.find(
-        {"id": {"$in": game.players[identity]["deck"]["cards"]}}
+        {"id": {"$in": list(game.players[identity]["deck"]["cards"])}}
     ).to_list()
 
     pl = game.players[identity]
@@ -74,11 +74,11 @@ async def show_match(match_id: str):
     op = game.players[opkey]
 
     hand = await gamedb.cards.find(
-        {"id": {"$in": game.players[identity]["hand"]}}
+        {"id": {"$in": list(game.players[identity]["hand"])}}
     ).to_list()
 
     ophand = await gamedb.cards.find(
-        {"id": {"$in": game.players[opkey]["hand"]}}
+        {"id": {"$in": list(game.players[opkey]["hand"])}}
     ).to_list()
 
     resp = Response()
@@ -373,6 +373,6 @@ async def match_add_event(match_id: str):
     game = Match.create(match)
     game.do(e, a, v)
 
-    await gamedb.matches.replace_one(lookup, game._asdict())
+    await gamedb.matches.replace_one(lookup, game.asdict())
 
     return []

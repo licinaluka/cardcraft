@@ -47,7 +47,8 @@ task "tests" do
         "unittest",
         "discover",
         "-s",
-        "cardcraft/app"
+        "cardcraft/app",
+        "cardcraft/game"
       ]
     ).join " "
   end

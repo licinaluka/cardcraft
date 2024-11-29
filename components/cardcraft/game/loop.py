@@ -1,5 +1,6 @@
 import asyncio
 import time
+import typing as T
 
 from cardcraft.game.engine import Engine
 from cardcraft.game.db import gamedb
@@ -34,7 +35,7 @@ async def loop(engine_klass):
                 Nemesis(opkey).do(match=state)
                 changed = state
 
-        then = state._asdict()
+        then = state.asdict()
 
         if changed:
             await gamedb.matches.replace_one({"id": then["id"]}, then)

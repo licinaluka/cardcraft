@@ -10,6 +10,7 @@ import time
 import typing as T
 
 from multiprocessing.synchronize import Lock as LockT
+from pyrsistent import PMap, PVector, m, v
 
 from cardcraft.game.engine import BaseEngine
 from cardcraft.game.loop import loop
@@ -36,8 +37,6 @@ class Engine(BaseEngine):
         # "player uses 8c3c71cdfb1ebe8d14d00c49d4f11051 to attack unit-bot1"
         # fmt: on
 
-        print([event, entry])
-
         # detect and process card movement
         if "plays card " in entry and "position " in entry:
             # fmt: off
@@ -61,7 +60,7 @@ class Engine(BaseEngine):
             match.players[entity]["hand"].pop(match.players[entity]["hand"].index(cid))
             *path, tail = map(int, t)
 
-            functools.reduce(lambda a, e: a[e], path, match.fields)[tail] = card  # type: ignore[arg-type, return-value, call-overload]
+            functools.reduce(lambda a, e: a[e], path, match.fields).set(tail, card)  # type: ignore[arg-type, return-value, call-overload]
 
             # self.resolutions.append(resolution)
 
