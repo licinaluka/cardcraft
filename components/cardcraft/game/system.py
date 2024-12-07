@@ -8,8 +8,6 @@ from bson import ObjectId
 from enum import Enum
 from pyrsistent import PClass, PMap, PVector, field, m, v, freeze, thaw
 
-from cardcraft.app.services.mem import mem
-
 
 class Event(T.NamedTuple):
     e: str
