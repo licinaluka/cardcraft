@@ -58,13 +58,13 @@ class Match(PClass):
     winner: T.Optional[str] = field([str, type(None)])
 
     # reserved events for future turns
-    futures: dict[str, list[Event]] = field(dict)
+    futures: PMap[str, PVector[Event]] = field(PMap)
 
     # player data
     players: PMap[str, PMap] = field(PMap)
 
     # player response options
-    responses: PMap[str, PVector[str]] = m()
+    responses: PMap[str, PVector[str]] = field(PMap)
 
     # turn and event evaluated at the moment
     cursor: PVector[int] = field(PVector)
