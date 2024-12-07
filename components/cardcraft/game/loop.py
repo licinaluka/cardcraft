@@ -2,6 +2,8 @@ import asyncio
 import time
 import typing as T
 
+from pyrsistent import thaw
+
 from cardcraft.game.engine import Engine
 from cardcraft.game.db import gamedb
 from cardcraft.game.system import Match, Nemesis, Target
@@ -32,7 +34,7 @@ async def tick(match: dict, engine_klass: type, persists: bool = True) -> Match:
     if changed:
         state = changed
 
-    then = state.serialize()
+    then = thaw(state.serialize())
 
     if changed and persists:
         await gamedb.matches.replace_one({"id": then["id"]}, then)
@@ -42,7 +44,8 @@ async def tick(match: dict, engine_klass: type, persists: bool = True) -> Match:
 
 
 async def loop(engine_klass):
-    async for match in gamedb.matches.find({"finished": None, "winner": None}):
-        await tick(match, engine_klass)
+    while True:
+        async for match in gamedb.matches.find({"finished": None, "winner": None}):
+            await tick(match, engine_klass)
 
-    time.sleep(refresh)
+        time.sleep(refresh)
