@@ -21,7 +21,7 @@ from cardcraft.app.controllers.cards import card, controller as cards
 from cardcraft.app.controllers.decks import controller as decks
 from cardcraft.app.controllers.matches import controller as matches
 from cardcraft.app.services.db import gamedb
-from cardcraft.app.services.engine import locked_loop
+from cardcraft.app.services.loop import locked_loop
 from cardcraft.app.services.mem import mem
 from cardcraft.app.views.base import faq, hiccpage, landing as landingpage, trident
 from cardcraft.app.views.navigation import menu, navigation

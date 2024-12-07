@@ -370,9 +370,6 @@ async def match_add_event(match_id: str):
     match = await gamedb.matches.find_one(lookup)
     assert match is not None
 
-    game = Match.create(match)
-    game.do(e, a, v)
-
-    await gamedb.matches.replace_one(lookup, game.asdict())
+    await gamedb.matches.replace_one(lookup, Match.create(match).do(e, a, v).asdict())
 
     return []
