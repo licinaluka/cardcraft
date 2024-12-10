@@ -46,7 +46,7 @@ class BaseEngine(Engine):
 
             if not hasattr(match, fn):
                 # try to parse
-                changed = await self.parse(match, event)
+                changed = await self.parse(changed, event)
                 changed = changed.set(
                     "cursor", match.cursor.set(1, match.cursor[1] + 1)
                 )
