@@ -7,6 +7,7 @@ import sys
 from multiprocessing.synchronize import Lock as LockT
 
 from cardcraft.game.loop import loop
+from cardcraft.game.engine import DemoEngine
 
 
 def locked_loop(lock: LockT):
@@ -30,6 +31,6 @@ def locked_loop(lock: LockT):
 
         with lock:
             while run:
-                await loop(Engine)
+                await loop(DemoEngine)
 
     asyncio.run(game())

@@ -4,11 +4,11 @@ import typing as T
 
 from pyrsistent import thaw
 
-from cardcraft.game.engine import Engine
+from cardcraft.game.engine import BaseEngine
 from cardcraft.game.db import gamedb
 from cardcraft.game.system import Match, Nemesis, Target
 
-engines: dict[str, Engine] = {}
+engines: dict[str, BaseEngine] = {}
 refresh: int = 1
 
 

@@ -9,6 +9,42 @@ from enum import Enum
 from pyrsistent import PClass, PMap, PVector, field, m, v, freeze, thaw
 
 
+Stat = T.Union[str, int, float, bool, None]
+Mapping = T.Tuple[str, Stat]
+
+DefaultCardMapping: dict = {
+    "name": "A_value",
+    "type": "B_value",
+    "class": "C_value",
+    "atk": "E_value",
+    "def": "F_value",
+}
+
+
+class Card(PClass):
+    """a class that can be instantiated with card data and a user configured
+       mapping between a generic stat (atk, def, type, class, archety, cost, etc)
+       and any random card field and optionally a default value if none set
+
+    @note this lets a end user define any card layout they want and a mapping
+          for the actual game engine to use
+
+    """
+
+    data: PMap[str, Stat] = field(PMap)
+    mapping: PMap[str, Mapping] = field(PMap)
+
+    def get(self, stat: str) -> Stat:
+        mapping: T.Optional[Mapping] = self.mapping.get(stat)
+
+        if mapping is None:
+            return None
+
+        key, default = mapping
+
+        return self.data.get(key, None)
+
+
 class Event(T.NamedTuple):
     e: str
     a: str
@@ -167,7 +203,7 @@ class Match(PClass):
         op_dmg_key: str,
         pl_perc: float,
         pl_dmg_key: str,
-    ):
+    ) -> "Match":
         """card can damage the opponent for N% and player for N% of card's stat
 
         @param op_perc float
@@ -189,6 +225,16 @@ class Match(PClass):
 
         return self.do(target, "life", (-1 * (op_perc * int(card[op_dmg_key])))).do(
             played_by, "life", (-1 * (pl_perc * int(card[pl_dmg_key])))
+        )
+
+    def v1_buff(
+        self, card_id: str, played_by: str, stat: T.Literal["atk", "def"], amt: int
+    ):
+        direction = "increasing" if amt > 0 else "decreasing"
+        return self.do(
+            played_by,
+            f"player activates buff {card_id} on f-0-2, {direction} target's {stat} by {amt}",
+            None,
         )
 
     def v1_debuff(
