@@ -46,6 +46,7 @@ with description("game engine") as self:
                             ),
                         }
                     ),
+                    responses=m(),
                     winner=None,
                     opener="bot a",
                     cursor=v(0, 0),

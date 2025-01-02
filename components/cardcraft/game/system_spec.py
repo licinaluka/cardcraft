@@ -26,6 +26,7 @@ with describe("system"):
                     cursor=v(0, 0),
                     fields=v(v(card1)),
                     players=m(),
+                    responses=m(),
                     turns=v(),
                 )
             )
