@@ -28,7 +28,6 @@ class Card(PClass):
 
     @note this lets a end user define any card layout they want and a mapping
           for the actual game engine to use
-
     """
 
     data: PMap[str, Stat] = field(PMap)
@@ -36,6 +35,11 @@ class Card(PClass):
 
     def get(self, stat: str) -> Stat:
         mapping: T.Optional[Mapping] = self.mapping.get(stat)
+
+        if mapping is None:
+            priv = f"_{stat}"
+            if priv in self.data:
+                mapping = priv, None
 
         if mapping is None:
             return None
