@@ -1,4 +1,5 @@
 import asyncio
+import os
 import time
 import typing as T
 
@@ -9,7 +10,7 @@ from cardcraft.game.db import gamedb
 from cardcraft.game.system import Match, Nemesis, Target
 
 engines: dict[str, BaseEngine] = {}
-refresh: int = 1
+refresh: float = float(os.getenv("TICK_REFRESH", 1))
 
 
 async def tick(match: dict, engine_klass: type, persists: bool = True) -> Match:

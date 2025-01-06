@@ -48,6 +48,13 @@ class Card(PClass):
 
         return self.data.get(key, None)
 
+    def rotate(self, degrees: int) -> "Card":
+        assert not self.data.get("_rotation_locked")
+        old: int = self.data.get("_rotation", 0)
+
+        self.data.set("_rotation", old + degrees)
+        return self
+
 
 class Event(T.NamedTuple):
     e: str
@@ -234,11 +241,40 @@ class Match(PClass):
     def v1_buff(
         self, card_id: str, played_by: str, stat: T.Literal["atk", "def"], amt: int
     ):
+        """?
+
+        @since ?
+        @todo target something
+        """
         direction = "increasing" if amt > 0 else "decreasing"
         return self.do(
             played_by,
             f"player activates buff {card_id} on f-0-2, {direction} target's {stat} by {amt}",
             None,
+        )
+
+    def v1_prevent_rotation_continuous(self, card_id: str, played_by: str):
+        """card targets something, preventing card rotation (ATK/DEF stance) - continuously
+
+        @since ?
+        """
+        target = None
+        return self.do(
+            played_by,
+            f"player applies continuous effect {card_id} on {target}, preventing rotation",
+        )
+
+    def v1_prevent_rotation_N_times(
+        self, card_id: str, played_by: str, num_of_turns: int
+    ):
+        """card targets something, preventing card rotation (ATK/DEF stance) - N-turns
+
+        @since ?
+        """
+        target = None
+        return self.do(
+            played_by,
+            f"player applies {num_of_turns}-turn effect {card_id} on {target}, preventing rotation",
         )
 
     def v1_debuff(

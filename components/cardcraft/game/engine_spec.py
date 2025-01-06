@@ -1,7 +1,7 @@
 import asyncio
 
 from mamba import before, description, context, it, _it
-from expects import contain, expect, equal
+from expects import be, contain, expect, equal
 from pyrsistent import m, v, freeze, thaw
 from random import randint
 from types import SimpleNamespace
