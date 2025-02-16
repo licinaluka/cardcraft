@@ -17,7 +17,8 @@
     "@solana/wallet-adapter-solflare": "^0.6.28",
     "@solana/web3.js": "^1.95.3",
     "bs58": "^6.0.0",
-    "buffer": "^6.0.3"
+    "buffer": "^6.0.3",
+    "elliptic": "^6.6.1"
   },
   "devDependencies": {
     "parcel-bundler": "^1.12.5",
