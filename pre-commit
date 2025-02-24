@@ -2,5 +2,9 @@
 
 set -e
 
-cd projects/cardcraft-web && poetry export --format=requirements.txt | poetry run pip-audit
-cd cardcraft/app && npm audit --production
+pwd=$PWD
+
+cd $pwd/projects/cardcraft-web && poetry export --format=requirements.txt | poetry run pip-audit
+cd $pwd/projects/cardcraft-web/cardcraft/app && npm audit --production
+
+cd $pwd/projects/sol && yarn audit --groups dependencies
