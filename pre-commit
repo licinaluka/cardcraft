@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -e
+
+cd projects/cardcraft-web && poetry export --format=requirements.txt | poetry run pip-audit
+cd cardcraft/app && npm audit --production
