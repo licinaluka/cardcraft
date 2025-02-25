@@ -7,5 +7,11 @@ services:
     volumes:
       - cardcraftdb:/data/db
 
+  sonar:
+    image: sonarqube:latest
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    ports:
+      - 9009:9000
 volumes:
   cardcraftdb:
