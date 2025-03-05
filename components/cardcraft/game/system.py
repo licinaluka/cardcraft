@@ -253,19 +253,46 @@ class Match(PClass):
             None,
         )
 
-    def v1_prevent_rotation_continuous(self, card_id: str, played_by: str):
+    def v1_prevent_rotation_continuous(
+        self,
+        card_id: str,
+        played_by: str,
+        target: str,
+        target_attribute: T.Optional[str] = None,
+        target_value: T.Optional[T.Any] = None,
+    ):
         """card targets something, preventing card rotation (ATK/DEF stance) - continuously
 
         @since ?
         """
-        target = None
+        # @todo will need a universal target resolving approach
+        if target_attribute is not None and target.startswith("f-"):
+            _, row, col = target.split("-")
+            card: Card = Card(
+                data=freeze(self.fields[int(row)][int(col)]),
+                mapping=m(**{k: (v, None) for k, v in DefaultCardMapping.items()}),
+            )
+            actual_value: T.Any = card.get(target_attribute)
+            # assert target[target_attribute] == target_value
+            if target_value != actual_value:
+                raise Exception(
+                    f"""Cannot apply v1_prevent_rotation_continuous on {card.get("name")} - {target_value} <> {actual_value}"""
+                )
+
         return self.do(
             played_by,
             f"player applies continuous effect {card_id} on {target}, preventing rotation",
+            None,
         )
 
     def v1_prevent_rotation_N_times(
-        self, card_id: str, played_by: str, num_of_turns: int
+        self,
+        card_id: str,
+        played_by: str,
+        num_of_turns: int,
+        target: str,
+        target_attribute: T.Optional[str] = None,
+        target_value: T.Optional[T.Any] = None,
     ):
         """card targets something, preventing card rotation (ATK/DEF stance) - N-turns
 
@@ -275,6 +302,7 @@ class Match(PClass):
         return self.do(
             played_by,
             f"player applies {num_of_turns}-turn effect {card_id} on {target}, preventing rotation",
+            None,
         )
 
     def v1_debuff(
