@@ -3,7 +3,7 @@ services:
   db:
     image: mongo
     ports:
-      - '3135:27017'
+      - '127.0.0.1:3135:27017'
     volumes:
       - cardcraftdb:/data/db
 
