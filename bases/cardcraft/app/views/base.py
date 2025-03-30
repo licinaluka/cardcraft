@@ -115,7 +115,7 @@ async def hiccpage(page):
                         e.target.appendChild(el)
 
                         await fetch(
-                            `/web/part/game/matches/current/do`,
+                            `/game/web/part/game/matches/current/do`,
                             {
                                 method: 'POST',
                                 credentials: 'include',
@@ -223,7 +223,7 @@ def landing():
                         ],
                         [
                             "a",
-                            {"href": "/home", "class": "btn purple"},
+                            {"href": "/game/home", "class": "btn purple"},
                             "Get started",
                         ],
                         [

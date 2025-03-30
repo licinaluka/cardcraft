@@ -25,7 +25,7 @@ def listed(matches: list) -> list[Node]:
             [
                 "a",
                 {
-                    "hx-post": "/web/part/game/matches/new/decks",
+                    "hx-post": "/game/web/part/game/matches/new/decks",
                     "hx-target": ".tertiary",
                     "hx-swap": "innerHTML",
                     "class": "btn purple",
@@ -39,14 +39,14 @@ def listed(matches: list) -> list[Node]:
                     [
                         "a",
                         {
-                            "hx-get": f"/web/part/game/matches/{e['id']}",
+                            "hx-get": f"/game/web/part/game/matches/{e['id']}",
                             "hx-target": ".tertiary",
                             "class": "collection-item avatar",
                         },
                         [
                             "img",
                             {
-                                "src": f"/resources/app/img/match.jpeg",
+                                "src": f"/game/resources/app/img/match.jpeg",
                                 "class": "circle",
                             },
                         ],
@@ -68,7 +68,7 @@ def create_match_deck_selection(
         {"class": "game"},
         [
             "form",
-            {"hx-post": "/web/part/game/matches/new", "hx-target": ".game"},
+            {"hx-post": "/game/web/part/game/matches/new", "hx-target": ".game"},
             [
                 [
                     "select",
@@ -112,7 +112,7 @@ def create_match_deck_selection(
                                 "placeholder": "Lamports to put in match pot",
                                 "hx-trigger": "change, keyup",
                                 "hx-target": "#pot-message",
-                                "hx-post": "/web/part/game/matches/new/pot-fee",
+                                "hx-post": "/game/web/part/game/matches/new/pot-fee",
                                 "hx-ext": "json-enc",
                             },
                         ],
@@ -152,7 +152,7 @@ def shown(game: Match, identity, pot_status, deck, pl, hand, op, ophand) -> Node
                     "a",
                     {
                         "class": "btn purple game-refresh-trigger",
-                        "hx-get": f"/web/part/game/matches/{game.id}",
+                        "hx-get": f"/game/web/part/game/matches/{game.id}",
                         "hx-target": ".tertiary",
                         "hx-trigger": "click, every 9s",
                     },
@@ -164,7 +164,7 @@ def shown(game: Match, identity, pot_status, deck, pl, hand, op, ophand) -> Node
                         "a",
                         {
                             "class": "btn red",
-                            "hx-post": f"/web/part/game/matches/{game.id}/do",
+                            "hx-post": f"/game/web/part/game/matches/{game.id}/do",
                             "hx-vals": "js:{"
                             + f"event: ['{identity}', 'end_turn', null]"
                             + "}",
@@ -309,7 +309,7 @@ def shown(game: Match, identity, pot_status, deck, pl, hand, op, ophand) -> Node
                                             "div",
                                             {
                                                 "class": "deck-back-render glow",
-                                                "hx-post": f"/web/part/game/matches/{game.id}/do",
+                                                "hx-post": f"/game/web/part/game/matches/{game.id}/do",
                                                 "hx-vals": "js:{"
                                                 + f"event: ['{identity}', 'draw', '1']"
                                                 + "}",

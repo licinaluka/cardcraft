@@ -12,7 +12,7 @@ from types import SimpleNamespace
 from cardcraft.app.services.db import gamedb
 from cardcraft.app.services.mem import mem
 
-controller = Blueprint("authn", __name__)
+controller = Blueprint("authn", __name__, url_prefix="/game")
 
 
 @controller.route("/api/part/game/authn", methods=["POST"])
@@ -39,11 +39,17 @@ async def authn():
 
     ref: T.Optional[str] = request.cookies.get("ccraft_sess")
 
-    assert ref is not None
-    assert ref in mem["session"]
+    if ref is None:
+        raise AssertionError
 
-    assert mem["session"][ref]["key"] is not None
-    assert cid == mem["session"][ref]["cid"], json.dumps(mem["session"][ref])
+    if ref not in mem["session"]:
+        raise AssertionError
+
+    if mem["session"][ref]["key"] is None:
+        raise AssertionError
+
+    if cid != mem["session"][ref]["cid"]:
+        raise AssertionError(json.dumps(mem["session"][ref]))
 
     session: dict = mem["session"][ref]
 
@@ -69,6 +75,10 @@ async def authn():
 
 @controller.route("/api/part/game/authn/logout", methods=["GET"])
 async def logout():
+    """?
+
+    Todo: cookie params for samesite and strict
+    """
     return Response(
         status=303,
         headers={"Set-Cookie": f"ccraft_sess=nil;path=/;max-age=1", "Location": "/"},
@@ -77,6 +87,10 @@ async def logout():
 
 @controller.route("/api/part/game/authn/challenge", methods=["POST"])
 async def challenge():
+    """?
+
+    Todo: cookie params for samesite and strict
+    """
     ref: T.Optional[str] = request.cookies.get("ccraft_sess")
 
     session = SimpleNamespace(

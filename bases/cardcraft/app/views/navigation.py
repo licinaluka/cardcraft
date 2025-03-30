@@ -15,23 +15,23 @@ def menu():
                 [
                     "li",
                     {"class": "collection-item red-text"},
-                    ["a", {"href": "/help"}, "HELP & FAQ"],
+                    ["a", {"href": "/game/help"}, "HELP & FAQ"],
                 ],
                 ["hr"],
                 [
                     "li",
                     {"class": "collection-item"},
-                    ["a", {"href": "/home"}, "MATCHES"],
+                    ["a", {"href": "/game/home"}, "MATCHES"],
                 ],
                 [
                     "li",
                     {"class": "collection-item"},
-                    ["a", {"href": "/decks"}, "DECK BUILDER"],
+                    ["a", {"href": "/game/decks"}, "DECK BUILDER"],
                 ],
                 [
                     "li",
                     {"class": "collection-item"},
-                    ["a", {"href": "/cards"}, "CARD CREATOR"],
+                    ["a", {"href": "/game/cards"}, "CARD CREATOR"],
                 ],
             ],
         ],
@@ -84,10 +84,10 @@ async def navigation():
                     "|||",
                 ],
             ],
-            ["li", ["a", {"href": "/home"}, "HOME"]],
-            ["li", {"class": ""}, ["a", {"href": "/help"}, "HELP & FAQ"]],
+            ["li", ["a", {"href": "/game/home"}, "HOME"]],
+            ["li", {"class": ""}, ["a", {"href": "/game/help"}, "HELP & FAQ"]],
             (
-                ["li", ["a", {"href": "/api/part/game/authn/logout"}, "LOGOUT"]]
+                ["li", ["a", {"href": "/game/api/part/game/authn/logout"}, "LOGOUT"]]
                 if authenticated
                 else ""
             ),

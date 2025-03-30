@@ -208,7 +208,7 @@ img {
   margin: 3px 3px;
   width: 10em;
   height: 18em;
-  background: url('/resources/app/img/card-back.jpeg');
+  background: url('/game/resources/app/img/card-back.jpeg');
   background-size: 100% 100%;
 }
 
@@ -235,7 +235,7 @@ img {
 
 .game .opponent .card-render {
     display: block;
-    /* background: url('/resources/app/img/card-back.jpeg'); */
+    /* background: url('/game/resources/app/img/card-back.jpeg'); */
     background-size: 100% 100%;
     width: 10em;
     height: 20em;

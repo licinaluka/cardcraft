@@ -3,7 +3,7 @@ import json
 import os.path
 import time
 import unittest
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 
 check: unittest.TestCase = unittest.TestCase()
 

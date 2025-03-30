@@ -1,3 +1,4 @@
+import html
 import os
 import typing as T
 
@@ -52,7 +53,7 @@ def card(data: dict) -> list[T.Union[str, dict, list]]:
                 "img",
                 {
                     "src": (
-                        f"/resources/app/img/{d['C_value']}"
+                        f"/game/resources/app/img/{d['C_value']}"
                         if d["C_value"] is not None
                         else "data:,"
                     )
@@ -86,7 +87,7 @@ def card_complexity(level: str) -> list[T.Union[str, dict, list]]:
             ["p", ":B"],
             calc(":I") <= limit and ["p", ":I"],
             ["p", ":C (artwork)"],
-            ["img", {"src": "/resources/app/img/warrior-dude.jpg"}],
+            ["img", {"src": "/game/resources/app/img/warrior-dude.jpg"}],
         ],
         ["hr"],
         calc(":J") <= limit and ["p", ":J"],  # type: ignore[list-item]
@@ -102,7 +103,7 @@ def listed(cards: list):
         "a",
         {
             "class": "btn purple",
-            "hx-get": "/web/part/game/cards/new",
+            "hx-get": "/game/web/part/game/cards/new",
             "hx-target": ".tertiary",
         },
         "create a card",
@@ -118,7 +119,7 @@ def listed(cards: list):
                     "a",
                     {
                         "class": "btn purple lighten-2",
-                        "hx-get": "/web/part/game/artwork/new",
+                        "hx-get": "/game/web/part/game/artwork/new",
                         "hx-target": ".tertiary",
                     },
                     "upload artwork",
@@ -130,14 +131,14 @@ def listed(cards: list):
                         [
                             "a",
                             {
-                                "hx-get": f"/web/part/game/cards/{e['id']}",
+                                "hx-get": f"/game/web/part/game/cards/{e['id']}",
                                 "hx-target": ".tertiary",
                                 "class": "collection-item avatar",
                             },
                             [
                                 "img",
                                 {
-                                    "src": f"/resources/app/img/{e['C_value']}",
+                                    "src": f"/game/resources/app/img/{e['C_value']}",
                                     "class": "circle",
                                 },
                             ],
@@ -173,7 +174,7 @@ def creation_complexity():
                         [
                             "a",
                             {
-                                "hx-get": f"/web/part/game/cards/new/{chr(e)}",
+                                "hx-get": f"/game/web/part/game/cards/new/{chr(e)}",
                                 "hx-target": ".game",
                             },
                         ],
@@ -204,7 +205,7 @@ def creation_detailed(level: str):
             "form",
             {
                 "class": "card-meta",
-                "hx-post": "/web/part/game/cards/new",
+                "hx-post": "/game/web/part/game/cards/new",
                 "hx-target": ".game",
             },
             [

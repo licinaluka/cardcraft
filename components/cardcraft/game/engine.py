@@ -193,7 +193,8 @@ class DemoEngine(BaseEngine):
                             newpath = path + [tail]
                             break
 
-                assert newpath, "Card not in field"
+                if not newpath:
+                    raise AssertionError("Card not in field")
 
             fields = thaw(match.fields)
             functools.reduce(lambda a, e: a[e], path, fields)[tail] = None

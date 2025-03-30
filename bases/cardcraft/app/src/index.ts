@@ -62,7 +62,7 @@ class Purse {
 
         // obtain login challenge
         let resp = await fetch(
-            '/api/part/game/authn/challenge',
+            '/game/api/part/game/authn/challenge',
             {
                 credentials: "same-origin",
                 method: 'POST',
@@ -88,7 +88,7 @@ class Purse {
 
         // send back to server, set-cookie response header will assign a session
         await fetch(
-            '/api/part/game/authn',
+            '/game/api/part/game/authn',
             {
                 credentials: "same-origin",
                 method: 'POST',

@@ -25,13 +25,14 @@ from cardcraft.app.views.matches import (
 )
 from cardcraft.game.system import Match, Target
 
-controller = Blueprint("matches", __name__)
+controller = Blueprint("matches", __name__, url_prefix="/game")
 
 
 @controller.route("/web/part/game/matches", methods=["GET"])
 async def list_matches():
     sess_id: T.Optional[str] = request.cookies.get("ccraft_sess")
-    assert sess_id is not None
+    if sess_id is None:
+        raise AssertionError
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
     if identity is None:
@@ -51,17 +52,20 @@ async def show_match(match_id: str):
     @version 2024-09-22
     """
     sess_id: T.Optional[str] = request.cookies.get("ccraft_sess")
-    assert sess_id is not None
+    if sess_id is None:
+        raise AssertionError
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
-    assert identity is not None
+    if identity is None:
+        raise AssertionError
 
     lookup = {
         "id": match_id,
         f"players.{identity}": {"$exists": True},
     }
     match = await gamedb.matches.find_one(lookup)
-    assert match is not None
+    if match is None:
+        raise AssertionError
 
     game = Match.create(match)
 
@@ -101,10 +105,14 @@ async def show_match(match_id: str):
 @controller.route("/web/part/game/matches/new/decks", methods=["POST"])
 async def new_match_deck_selection():
     sess_id: T.Optional[str] = request.cookies.get("ccraft_sess")
-    assert sess_id is not None
+
+    if sess_id is None:
+        raise AssertionError
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
-    assert identity is not None
+
+    if identity is None:
+        raise AssertionError
 
     unfinished = await gamedb.matches.find(
         {f"players.{identity}": {"$exists": True}, "finished": None}
@@ -212,10 +220,12 @@ async def show_match_pot_status(match_id: str):
 @controller.route("/web/part/game/matches/new", methods=["POST"])
 async def new_match():
     sess_id: T.Optional[str] = request.cookies.get("ccraft_sess")
-    assert sess_id is not None
+    if sess_id is None:
+        raise AssertionError
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
-    assert identity is not None
+    if identity is None:
+        raise AssertionError
 
     form: ImmutableMultiDict[str, str] = request.form
 
@@ -224,11 +234,13 @@ async def new_match():
 
     # csrf token
     match_secret: T.Optional[str] = form.get("csrf")
-    assert match_secret is not None
+    if match_secret is None:
+        raise AssertionError
 
     # match creation timestamp
     created: int = mem["csrf"][match_secret]
-    assert created is not None
+    if created is None:
+        raise AssertionError
 
     # deck selection
     deck_id: T.Optional[str] = form.get("deck_id")
@@ -248,7 +260,8 @@ async def new_match():
     random.shuffle(deck_op["cards"])
     random.shuffle(deck_pl["cards"])
 
-    assert deck_pl is not None
+    if deck_pl is None:
+        raise AssertionError
 
     # pot
     lamports: int = 0 if not pot else int(request.form.get("lamports") or 0)
@@ -349,15 +362,18 @@ async def match_add_event(match_id: str):
         raise Exception("Event entity and attribute cannot be nil valued!")
 
     sess_id: T.Optional[str] = request.cookies.get("ccraft_sess")
-    assert sess_id is not None
+    if sess_id is None:
+        raise AssertionError
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
-    assert identity is not None
+    if identity is None:
+        raise AssertionError
 
     if e == "$me":
         e = identity
 
-    assert identity == e
+    if e != identity:
+        raise AssertionError
 
     lookup: dict[str, T.Any] = {
         f"players.{identity}": {"$exists": True},
@@ -368,7 +384,8 @@ async def match_add_event(match_id: str):
         lookup["id"] = match_id
 
     match = await gamedb.matches.find_one(lookup)
-    assert match is not None
+    if match is None:
+        raise AssertionError
 
     await gamedb.matches.replace_one(lookup, Match.create(match).do(e, a, v).asdict())
 

@@ -49,7 +49,9 @@ class Card(PClass):
         return self.data.get(key, None)
 
     def rotate(self, degrees: int) -> "Card":
-        assert not self.data.get("_rotation_locked")
+        if self.data.get("_rotation_locked"):
+            raise AssertionError
+ 
         old: int = self.data.get("_rotation", 0)
 
         self.data.set("_rotation", old + degrees)
@@ -150,7 +152,8 @@ class Match(PClass):
                 winner = k
                 break
 
-        assert winner is not None
+        if winner is None:
+            raise AssertionError
 
         return self.set("winner", winner).set("finished", int(time.time()))
 

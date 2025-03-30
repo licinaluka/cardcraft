@@ -1,16 +1,14 @@
 [tool.poetry]
-name = "cardgames"
+name = "cardcraft-installer"
 version = "0.1.0"
 description = ""
 authors = ["Luka L <licina.luka@outlook.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
-pysonar-scanner = "0.2.0.520"
-django = "5.1.7"
-bandit = {version = "1.8.3", extras = ["baseline"]}
-defusedxml = "0.7.1"
+python = "^3.9"
+fabric = "3.2.2"
+pyrsistent = "0.20.0"
 
 
 [build-system]

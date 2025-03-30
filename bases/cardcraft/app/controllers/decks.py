@@ -12,16 +12,18 @@ from cardcraft.app.views.navigation import menu
 from cardcraft.app.services.db import gamedb
 from cardcraft.app.services.mem import mem
 
-controller = Blueprint("decks", __name__)
+controller = Blueprint("decks", __name__, url_prefix="/game")
 
 
 @controller.route("/decks", methods=["GET"])
 async def list_decks():
     sess_id: T.Optional[str] = request.cookies.get("ccraft_sess", None)
-    assert sess_id is not None
+    if sess_id is None:
+        raise AssertionError
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
-    assert identity is not None
+    if identity is None:
+        raise AssertionError
 
     decks = await gamedb.decks.find({"owner": identity}).to_list()
     listing: list = [
@@ -39,10 +41,12 @@ async def list_decks():
 @controller.route("/web/part/game/decks/<deck_id>", methods=["GET"])
 async def show_deck(deck_id: str):
     sess_id: T.Optional[str] = request.cookies.get("ccraft_sess", None)
-    assert sess_id is not None
+    if sess_id is None:
+        raise AssertionError
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
-    assert identity is not None
+    if identity is None:
+        raise AssertionError
 
     deck: T.Optional[dict] = await gamedb.decks.find_one(
         {"id": deck_id, "owner": identity}
@@ -64,10 +68,12 @@ async def show_deck(deck_id: str):
 @controller.route("/web/part/game/decks/new", methods=["POST"])
 async def store_deck():
     sess_id: T.Optional[str] = request.cookies.get("ccraft_sess", None)
-    assert sess_id is not None
+    if sess_id is None:
+        raise AssertionError
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
-    assert identity is not None
+    if identity is None:
+        raise AssertionError
 
     form: ImmutableMultiDict[str, str] = request.form
     if form is None:
@@ -90,10 +96,12 @@ async def store_deck():
 @controller.route("/web/part/game/decks/<deck_id>", methods=["PUT"])
 async def update_deck(deck_id: str):
     sess_id: T.Optional[str] = request.cookies.get("ccraft_sess", None)
-    assert sess_id is not None
+    if sess_id is None:
+        raise AssertionError
 
     identity: T.Optional[str] = mem["session"].get(sess_id, {}).get("key", None)
-    assert identity is not None
+    if identity is None:
+        raise AssertionError
 
     form: ImmutableMultiDict[str, str] = request.form
 

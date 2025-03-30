@@ -12,10 +12,7 @@ from solana.transaction import Transaction
 from solders.keypair import Keypair
 from solders.message import Message
 from solders.pubkey import Pubkey
-from solders.rpc.responses import (
-    GetFeeForMessageResp,
-    GetTransactionResp
-)
+from solders.rpc.responses import GetFeeForMessageResp, GetTransactionResp
 from solders.transaction_status import (
     EncodedVersionedTransaction,
     UiAccountsList,
@@ -74,9 +71,12 @@ class Pot:
         """
 
         bot: T.Optional[Keypair] = self.get_bot_wallet(idx=1)
-        
-        assert self.sys is not None
-        assert bot is not None
+
+        if self.sys is None:
+            raise AssertionError("Missing!")
+
+        if bot is None:
+            raise AssertionError("Bot cannot be nil-valued!")
 
         tx = Transaction(
             recent_blockhash=self.connection.get_latest_blockhash().value.blockhash
@@ -169,9 +169,14 @@ class Pot:
         return self.connection.get_balance(addr.pubkey()).value
 
     def pay_match_balance(self, match: dict) -> T.Optional[str]:
-        assert "winner" in match
-        assert "created" in match
-        assert "finished" in match and match["finished"] is not None
+        if "winner" not in match:
+            raise AssertionError
+
+        if "created" not in match:
+            raise AssertionError
+
+        if "finished" not in match or match["finished"] is None:
+            raise AssertionError
 
         if self.sys is None:
             return None
@@ -186,7 +191,9 @@ class Pot:
         )
         fee: int = self.get_pot_fee(lamports)
 
-        assert fee < lamports
+        if fee < lamports:
+            raise AssertionError
+
         lamports -= fee
 
         winner: T.Union[Pubkey, T.Any] = Pubkey.from_string(

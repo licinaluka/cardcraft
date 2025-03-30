@@ -20,6 +20,7 @@ from cardcraft.app.controllers.authn import controller as authn
 from cardcraft.app.controllers.cards import card, controller as cards
 from cardcraft.app.controllers.decks import controller as decks
 from cardcraft.app.controllers.matches import controller as matches
+from cardcraft.app.controllers.configuration.sections import controller as sections
 from cardcraft.app.services.db import gamedb
 from cardcraft.app.services.loop import locked_loop
 from cardcraft.app.services.mem import mem
@@ -27,14 +28,16 @@ from cardcraft.app.views.base import faq, hiccpage, landing as landingpage, trid
 from cardcraft.app.views.navigation import menu, navigation
 from cardcraft.app.views.theme import theme
 
-app = Flask(__name__, static_url_path="/resources", static_folder="./resources")
-app.config["UPLOAD_FOLDER"] = join(dirname(__file__), "resources/app/img")
+game = Flask(__name__, static_url_path="/game/resources", static_folder="./resources")
+game.config["UPLOAD_FOLDER"] = join(dirname(__file__), "resources/app/img")
 
-app.register_blueprint(authn)
-app.register_blueprint(cards)
-app.register_blueprint(decks)
-app.register_blueprint(matches)
+game.register_blueprint(authn)
+game.register_blueprint(cards)
+game.register_blueprint(decks)
+game.register_blueprint(matches)
 
+# config
+game.register_blueprint(sections)
 
 private = os.getenv("PRIVATE_ENGINE", "0")
 
@@ -51,7 +54,7 @@ if private != "1":
     signal.signal(signal.SIGINT, reloaded)
 
 
-# @app.errorhandler(Exception)
+# @game.errorhandler(Exception)
 def exceptions(err):
     resp = Response(
         json.dumps({"detail": str(err)}), status=500, mimetype="application/json"
@@ -59,7 +62,7 @@ def exceptions(err):
     return resp
 
 
-@app.route("/")
+@game.route("/game")
 async def landing():
     if request.cookies.get("ccraft_sess") is not None:
         return redirect("/home")
@@ -67,12 +70,16 @@ async def landing():
     return _convert_tree(landingpage())
 
 
-@app.route("/home", methods=["GET"])
+@game.route("/game/home", methods=["GET"])
 async def home():
     return await hiccpage(
         trident(
             menu(),
-            ["span", {"hx-get": "/web/part/game/matches", "hx-trigger": "load"}, " "],
+            [
+                "span",
+                {"hx-get": "/game/web/part/game/matches", "hx-trigger": "load"},
+                " ",
+            ],
             [
                 "div",
                 {"style": "padding:2em;"},
@@ -82,10 +89,10 @@ async def home():
     )
 
 
-@app.route("/help", methods=["GET"])
+@game.route("/game/help", methods=["GET"])
 async def help():
     secondary, tertiary = faq()
     return await hiccpage(trident(menu(), secondary, tertiary))
 
 
-asgi_app = WsgiToAsgi(app)
+asgi_app = WsgiToAsgi(game)

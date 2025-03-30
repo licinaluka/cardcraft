@@ -9,7 +9,7 @@ def listed(decks: list[dict]):
             "a",
             {
                 "class": "btn purple",
-                "hx-get": "/web/part/game/decks/new",
+                "hx-get": "/game/web/part/game/decks/new",
                 "hx-target": ".tertiary",
             },
             "create a deck",
@@ -26,7 +26,7 @@ def listed(decks: list[dict]):
                             "img",
                             {
                                 "class": "circle",
-                                "src": "/resources/app/img/card-back.jpeg",
+                                "src": "/game/resources/app/img/card-back.jpeg",
                             },
                             " ",
                         ],
@@ -34,7 +34,7 @@ def listed(decks: list[dict]):
                             "a",
                             {
                                 "class": "title",
-                                "hx-get": f"/web/part/game/decks/{e['id']}",
+                                "hx-get": f"/game/web/part/game/decks/{e['id']}",
                                 "hx-target": ".tertiary",
                             },
                             e["name"],
@@ -69,7 +69,7 @@ def shown(deck: dict, available: list[dict], used: list[dict]):
                 [
                     "form",
                     {
-                        "hx-put": f"/web/part/game/decks/{deck['id']}",
+                        "hx-put": f"/game/web/part/game/decks/{deck['id']}",
                         "hx-target": ".tertiary",
                         "style": "flex-grow: 1; height: 90vh; overflow-y: scroll; margin: 1em; padding: 1em;",
                     },
@@ -137,7 +137,7 @@ def create_deck(cards: list[dict]):
             [
                 [
                     "form",
-                    {"hx-post": "/web/part/game/decks/new", "hx-target": "body"},
+                    {"hx-post": "/game/web/part/game/decks/new", "hx-target": "body"},
                     [
                         [
                             "input",

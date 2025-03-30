@@ -17,7 +17,7 @@ from cardcraft.app.views.cards import (
 from cardcraft.app.views.navigation import menu, navigation
 from cardcraft.game.system import Match
 
-controller = Blueprint("cards", __name__)
+controller = Blueprint("cards", __name__, url_prefix="/game")
 
 demo = [
     {
@@ -161,7 +161,8 @@ demo = [
 @controller.route("/cards", methods=["GET"])
 async def list_cards():
     sess_id: T.Optional[str] = request.cookies.get("ccraft_sess", None)
-    assert sess_id is not None
+    if sess_id is None:
+        raise AssertionError
 
     res = await gamedb.cards.find({}).to_list()
     secondary, tertiary = listed(cards=res)
@@ -222,9 +223,14 @@ def artwork_form():
 def artwork_upload():
     f = request.files["artwork"]
 
-    assert f is not None
-    assert f.filename is not None
-    assert f.filename != ""
+    if f is None:
+        raise AssertionError
+
+    if f.filename is None:
+        raise AssertionError
+
+    if "" == filename:
+        raise AssertionError
 
     filename: str = secure_filename(f.filename)
     f.save(join(current_app.config["UPLOAD_FOLDER"], filename))
@@ -245,6 +251,6 @@ def artwork_upload():
                 ],
             ],
             ["p", {}, filename],
-            ["img", {"src": f"resources/app/img/{filename}"}],
+            ["img", {"src": f"game/resources/app/img/{filename}"}],
         ]
     )
